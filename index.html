@@ -6,239 +6,256 @@
 <title>Учёт электроэнергии — Дача</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.9.0/dist/tabler-icons.min.css">
 <style>
-:root{
-  --bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e99;
-  --border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--radius:8px;--radius-lg:12px;
-  --green-bg:#eaf3de;--green-text:#3b6d11;--red-bg:#fcebeb;--red-text:#a32d2d;
-  --amber-bg:#faeeda;--amber-text:#854f0b;--blue-bg:#e6f1fb;--blue-text:#185fa5;
-}
-@media(prefers-color-scheme:dark){:root{
-  --bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333331;--text:#f0f0ec;--text2:#a0a09a;--text3:#6e6e68;
-  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);
-  --green-bg:#173404;--green-text:#c0dd97;--red-bg:#501313;--red-text:#f7c1c1;
-  --amber-bg:#412402;--amber-text:#fac775;--blue-bg:#042c53;--blue-text:#b5d4f4;
-}}
+:root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e99;--border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--radius:8px;--radius-lg:12px;--green-bg:#eaf3de;--green:#3b6d11;--red-bg:#fcebeb;--red:#a32d2d;--amber-bg:#faeeda;--amber:#854f0b;--blue-bg:#e6f1fb;--blue:#185fa5}
+@media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333331;--text:#f0f0ec;--text2:#a0a09a;--text3:#6e6e68;--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);--green-bg:#173404;--green:#c0dd97;--red-bg:#501313;--red:#f7c1c1;--amber-bg:#412402;--amber:#fac775;--blue-bg:#042c53;--blue:#b5d4f4}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;min-height:100vh}
 .shell{max-width:960px;margin:0 auto;padding:0 16px 40px}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;gap:12px;flex-wrap:wrap}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;gap:8px;flex-wrap:wrap}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-icon{width:36px;height:36px;background:var(--text);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
 .logo-icon i{color:var(--bg);font-size:20px}
 .logo-title{font-size:17px;font-weight:600}
 .logo-sub{font-size:12px;color:var(--text2)}
-.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hright{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
 .dot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0}
-.dot.ok{background:#3b6d11}.dot.err{background:#a32d2d}.dot.loading{background:#ba7517;animation:pulse 1s infinite}
+.dot.ok{background:#3b6d11}.dot.err{background:#a32d2d}.dot.spin{background:#ba7517;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.icon-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;font-size:13px;color:var(--text2);font-family:inherit}
-.icon-btn:hover{background:var(--bg2);color:var(--text)}
-.user-badge{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg2);border-radius:var(--radius);font-size:12px;border:.5px solid var(--border)}
-.user-badge.admin{border-color:var(--amber-text);background:var(--amber-bg);color:var(--amber-text)}
-.user-badge.owner{border-color:var(--green-text);background:var(--green-bg);color:var(--green-text)}
+.ibtn{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit}
+.ibtn:hover{background:var(--bg2);color:var(--text)}
+.ubadge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:var(--radius);font-size:12px;border:.5px solid var(--border)}
+.ubadge.admin{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.ubadge.owner{border-color:var(--green);background:var(--green-bg);color:var(--green)}
 nav{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.nav-btn{padding:7px 15px;border:.5px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:6px}
-.nav-btn:hover{background:var(--bg2);color:var(--text)}
-.nav-btn.active{background:var(--bg);color:var(--text);border-color:var(--border2);font-weight:500}
+.nb{padding:7px 14px;border:.5px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.nb:hover{background:var(--bg2);color:var(--text)}
+.nb.active{background:var(--bg);color:var(--text);border-color:var(--border2);font-weight:500}
 .page{display:none}.page.active{display:block}
 .card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:14px}
-.card-title{font-size:14px;font-weight:600;margin-bottom:12px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:600px){.grid-2{grid-template-columns:1fr}}
+.ct{font-size:14px;font-weight:600;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.g2{grid-template-columns:1fr}}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
-.metric{background:var(--bg2);border-radius:var(--radius);padding:12px 14px}
-.metric-label{font-size:11px;color:var(--text2);margin-bottom:4px}
-.metric-value{font-size:22px;font-weight:600;line-height:1.1}
-.metric-unit{font-size:12px;color:var(--text2);margin-left:2px;font-weight:400}
-.tbl-wrap{overflow-x:auto}
+.met{background:var(--bg2);border-radius:var(--radius);padding:12px 14px}
+.ml{font-size:11px;color:var(--text2);margin-bottom:4px}
+.mv{font-size:22px;font-weight:600;line-height:1.1}
+.mu{font-size:12px;color:var(--text2);margin-left:2px;font-weight:400}
+.ow{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;font-weight:500;font-size:11px;color:var(--text2);padding:6px 8px;border-bottom:.5px solid var(--border);white-space:nowrap}
 td{padding:7px 8px;border-bottom:.5px solid var(--border)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg2)}
-.tr{text-align:right}.tnowrap{white-space:nowrap}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.tr{text-align:right}.tnw{white-space:nowrap}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
 .fg label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px}
-input,select,textarea{font-family:inherit;font-size:13px;width:100%;background:var(--bg);color:var(--text);border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 10px;outline:none;transition:border-color .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--text2)}
+input,select{font-family:inherit;font-size:13px;width:100%;background:var(--bg);color:var(--text);border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 10px;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--text2)}
 input[readonly]{background:var(--bg2);color:var(--text2)}
-.btn{padding:8px 16px;border:.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn{padding:8px 15px;border:.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn:hover{background:var(--bg2)}.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-primary{background:var(--text);color:var(--bg);border-color:transparent}.btn-primary:hover{opacity:.85}
+.btn-p{background:var(--text);color:var(--bg);border-color:transparent}.btn-p:hover{opacity:.85}
 .btn-sm{padding:4px 10px;font-size:12px}
-.btn-danger{color:var(--red-text);border-color:var(--red-text)}
 .badge{display:inline-block;padding:2px 8px;border-radius:var(--radius);font-size:11px;font-weight:500}
-.badge-ok{background:var(--green-bg);color:var(--green-text)}
-.badge-danger{background:var(--red-bg);color:var(--red-text)}
-.pos{color:var(--green-text);font-weight:500}.neg{color:var(--red-text);font-weight:500}
+.bok{background:var(--green-bg);color:var(--green)}.berr{background:var(--red-bg);color:var(--red)}
+.pos{color:var(--green);font-weight:500}.neg{color:var(--red);font-weight:500}
 .msg{padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-top:10px}
-.msg-ok{background:var(--green-bg);color:var(--green-text)}
-.msg-err{background:var(--red-bg);color:var(--red-text)}
-.plot-card{border:.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
-.plot-card:hover{border-color:var(--border2);background:var(--bg2)}
-.plot-card.open{border-color:var(--border2)}
-.plot-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.plot-name{font-weight:600;font-size:14px}
-.plot-meta{font-size:12px;color:var(--text2);margin-top:2px}
-.plot-detail{margin-top:12px;border-top:.5px solid var(--border);padding-top:12px;display:none}
-.plot-card.open .plot-detail{display:block}
-.preview-box{background:var(--bg2);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.6}
-.loading-block{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
-@keyframes spin{to{transform:rotate(360deg)}}
+.mok{background:var(--green-bg);color:var(--green)}.merr{background:var(--red-bg);color:var(--red)}
+.pc{border:.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:10px;cursor:pointer}
+.pc:hover{border-color:var(--border2);background:var(--bg2)}.pc.open{border-color:var(--border2)}
+.pch{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.pname{font-weight:600;font-size:14px}.pmeta{font-size:12px;color:var(--text2);margin-top:2px}
+.pd{margin-top:12px;border-top:.5px solid var(--border);padding-top:12px;display:none}
+.pc.open .pd{display:block}
+.prev-box{background:var(--bg2);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.7}
+.info-box{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:2}
+.loading{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px}
 .divider{height:.5px;background:var(--border);margin:12px 0}
-/* LOGIN MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
-.modal-overlay.hidden{display:none}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
+.overlay.hidden{display:none}
 .modal{background:var(--bg);border-radius:var(--radius-lg);padding:28px 32px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:6px}
 .modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.pin-input{font-size:28px;letter-spacing:8px;text-align:center;padding:12px;font-weight:600}
-/* PASSWORDS TABLE */
-.pwd-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--border)}
+.pin-inp{font-size:28px;letter-spacing:8px;text-align:center;padding:12px;font-weight:600}
+/* PWD TABLE */
+.pwd-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--border)}
 .pwd-row:last-child{border-bottom:none}
 .pwd-code{font-family:monospace;font-size:16px;font-weight:600;letter-spacing:3px;background:var(--bg2);padding:3px 10px;border-radius:var(--radius)}
-@media(max-width:480px){.shell{padding:0 10px 30px}.metrics{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.shell{padding:0 10px 30px}.metrics{grid-template-columns:1fr 1fr}.fgrid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <div class="shell">
-<h1 class="sr-only">Учёт электроэнергии — Дачное сообщество</h1>
 
 <header>
   <div class="logo">
     <div class="logo-icon"><i class="ti ti-bolt"></i></div>
-    <div>
-      <div class="logo-title">Учёт электроэнергии</div>
-      <div class="logo-sub">Дачное сообщество</div>
-    </div>
+    <div><div class="logo-title">Учёт электроэнергии</div><div class="logo-sub">Дачное сообщество</div></div>
   </div>
-  <div class="header-right">
-    <div class="status"><div class="dot loading" id="status-dot"></div><span id="status-text">Подключение...</span></div>
-    <div id="user-badge" class="user-badge" style="display:none"></div>
-    <button class="icon-btn" id="btn-login" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
-    <button class="icon-btn" id="btn-logout" onclick="logout()" style="display:none"><i class="ti ti-logout"></i> Выйти</button>
-    <button class="icon-btn" onclick="loadData()"><i class="ti ti-refresh"></i> Обновить</button>
+  <div class="hright">
+    <div class="status"><div class="dot spin" id="sd"></div><span id="st">Подключение...</span></div>
+    <div id="ubadge" class="ubadge" style="display:none"></div>
+    <button class="ibtn" id="btn-login" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
+    <button class="ibtn" id="btn-logout" onclick="logout()" style="display:none"><i class="ti ti-logout"></i> Выйти</button>
+    <button class="ibtn" onclick="load()"><i class="ti ti-refresh"></i></button>
   </div>
 </header>
 
-<nav id="main-nav">
-  <button class="nav-btn active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i> Сводка</button>
-  <button class="nav-btn" onclick="showPage('plots')"><i class="ti ti-home"></i> Участки</button>
-  <button class="nav-btn" id="nav-add" onclick="showPage('add')"><i class="ti ti-plus"></i> Запись</button>
-  <button class="nav-btn" id="nav-passwords" style="display:none" onclick="showPage('passwords')"><i class="ti ti-key"></i> Пароли</button>
-  <button class="nav-btn" id="nav-settings" style="display:none" onclick="showPage('settings')"><i class="ti ti-settings"></i> Настройки</button>
+<nav>
+  <button class="nb active" onclick="go('ov')"><i class="ti ti-layout-dashboard"></i> Сводка</button>
+  <button class="nb" onclick="go('pl')"><i class="ti ti-home"></i> Участки</button>
+  <button class="nb" onclick="go('add')"><i class="ti ti-plus"></i> Запись</button>
+  <button class="nb" onclick="go('pay')"><i class="ti ti-cash"></i> Оплата</button>
+  <button class="nb" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i> Пароли</button>
+  <button class="nb" id="nav-cfg" style="display:none" onclick="go('cfg')"><i class="ti ti-settings"></i> Настройки</button>
 </nav>
 
-<!-- OVERVIEW -->
-<div id="page-overview" class="page active">
-  <div class="metrics" id="ov-metrics"><div class="metric"><div class="metric-label">Загрузка</div><div class="metric-value">...</div></div></div>
-  <div class="grid-2">
-    <div class="card"><div class="card-title">Долги / переплаты</div><div id="ov-debts"><div class="loading-block"><div class="spinner"></div><br>Загрузка...</div></div></div>
-    <div class="card"><div class="card-title">Последние записи</div><div id="ov-recent"><div class="loading-block"><div class="spinner"></div><br>Загрузка...</div></div></div>
+<!-- СВОДКА -->
+<div id="pg-ov" class="page active">
+  <div class="metrics" id="ov-m"><div class="met"><div class="ml">Загрузка</div><div class="mv">...</div></div></div>
+  <div class="g2">
+    <div class="card"><div class="ct">Долги / переплаты</div><div id="ov-d"><div class="loading">Загрузка...</div></div></div>
+    <div class="card"><div class="ct">Последние записи</div><div id="ov-r"><div class="loading">Загрузка...</div></div></div>
   </div>
 </div>
 
-<!-- PLOTS -->
-<div id="page-plots" class="page">
-  <div id="plots-list"><div class="loading-block"><div class="spinner"></div><br>Загрузка...</div></div>
+<!-- УЧАСТКИ -->
+<div id="pg-pl" class="page">
+  <div id="pl-list"><div class="loading">Загрузка...</div></div>
 </div>
 
-<!-- ADD -->
-<div id="page-add" class="page">
-  <div id="add-login-prompt" class="card" style="display:none">
-    <div class="card-title"><i class="ti ti-lock"></i> Требуется вход</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Для добавления показаний введите ваш 4-значный код.</p>
-    <button class="btn btn-primary" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
+<!-- ЗАПИСЬ -->
+<div id="pg-add" class="page">
+  <div id="add-prompt" class="card" style="display:none">
+    <div class="ct"><i class="ti ti-lock"></i> Требуется вход</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Введите ваш 4-значный код для добавления показаний.</p>
+    <button class="btn btn-p" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
   </div>
-  <div id="add-form-wrap" class="card" style="display:none">
-    <div class="card-title">Новая запись показаний</div>
-    <div class="form-grid">
+  <div id="add-form" class="card" style="display:none">
+    <div class="ct">Новая запись показаний</div>
+    <div class="fgrid">
       <div class="fg" style="grid-column:span 2"><label>Участок</label><select id="a-plot" onchange="fillPrev()"></select></div>
     </div>
-    <div class="form-grid">
+    <div class="fgrid">
       <div class="fg"><label>Дата</label><input type="date" id="a-date"></div>
-      <div class="fg"><label>Новое показание (кВт·ч)</label><input type="number" id="a-reading" placeholder="напр. 15700" min="0" oninput="calcCons()"></div>
-      <div class="fg"><label>Предыдущее показание</label><input type="number" id="a-prev" placeholder="авто" min="0" oninput="calcCons()"></div>
+      <div class="fg"><label>Новое показание (кВт·ч)</label><input type="number" id="a-read" placeholder="напр. 15700" min="0" oninput="calcAdd()"></div>
+      <div class="fg"><label>Предыдущее показание</label><input type="number" id="a-prev" placeholder="авто" min="0" oninput="calcAdd()"></div>
       <div class="fg"><label>Расход (кВт·ч)</label><input type="number" id="a-cons" readonly placeholder="авто"></div>
-      <div class="fg"><label>Цена за кВт·ч (₸)</label><input type="number" id="a-price" value="36" step="0.01" oninput="calcCons()"></div>
-      <div class="fg"><label>Пополнение (₸)</label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcCons()"></div>
-      <div class="fg"><label>Баланс до (₸)</label><input type="number" id="a-balbefore" readonly placeholder="авто"></div>
-      <div class="fg"><label>Номер чека</label><input type="text" id="a-check" placeholder="№..."></div>
+      <div class="fg"><label>Цена за кВт·ч (₸)</label><input type="number" id="a-price" step="0.01" oninput="calcAdd()"></div>
+      <div class="fg"><label>Пополнение (₸)</label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcAdd()"></div>
+      <div class="fg"><label>Баланс до (₸)</label><input type="number" id="a-bb" readonly placeholder="авто"></div>
+      <div class="fg"><label>Номер чека</label><input type="text" id="a-chk" placeholder="№..."></div>
     </div>
     <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="a-note" placeholder="необязательно"></div>
-    <div class="preview-box" id="a-preview">Выберите участок и введите показание</div>
-    <button class="btn btn-primary" id="a-submit" onclick="submitRecord()"><i class="ti ti-device-floppy"></i> Сохранить в Google Sheets</button>
+    <div class="prev-box" id="a-preview">Выберите участок и введите показание</div>
+    <button class="btn btn-p" id="a-btn" onclick="submitAdd()"><i class="ti ti-device-floppy"></i> Сохранить в Google Sheets</button>
     <div id="a-msg"></div>
   </div>
 </div>
 
-<!-- PASSWORDS (только для admin) -->
-<div id="page-passwords" class="page">
+<!-- ОПЛАТА -->
+<div id="pg-pay" class="page">
+  <div id="pay-prompt" class="card" style="display:none">
+    <div class="ct"><i class="ti ti-lock"></i> Требуется вход</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Введите ваш 4-значный код для внесения оплаты.</p>
+    <button class="btn btn-p" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
+  </div>
+  <div id="pay-form" class="card" style="display:none">
+    <div class="ct">Внести оплату к последней записи</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Выберите участок — подтянется последняя запись. Сумма добавится к текущему пополнению.</p>
+    <div class="fgrid">
+      <div class="fg" style="grid-column:span 2"><label>Участок</label><select id="pay-plot" onchange="fillPayInfo()"></select></div>
+    </div>
+    <div class="info-box" id="pay-info">Выберите участок</div>
+    <div class="fgrid">
+      <div class="fg"><label>Добавить сумму (₸)</label><input type="number" id="pay-amount" placeholder="0" min="1" oninput="calcPay()"></div>
+      <div class="fg"><label>Номер чека</label><input type="text" id="pay-chk" placeholder="№..."></div>
+    </div>
+    <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="pay-note" placeholder="необязательно"></div>
+    <div class="prev-box" id="pay-preview">Введите сумму для расчёта нового баланса</div>
+    <button class="btn btn-p" id="pay-btn" onclick="submitPay()"><i class="ti ti-cash"></i> Сохранить оплату</button>
+    <div id="pay-msg"></div>
+  </div>
+</div>
+
+<!-- ПАРОЛИ -->
+<div id="pg-pwd" class="page">
   <div class="card">
-    <div class="card-title">Пароли участников</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Выдайте каждому владельцу его 4-значный код. Он вводится для добавления записей по своему участку.</p>
-    <div id="pwd-table"></div>
+    <div class="ct">Пароли участников</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Выдайте каждому владельцу его 4-значный код — он вводится для добавления записей и оплаты по своему участку.</p>
+    <div id="pwd-list"></div>
     <div class="divider"></div>
-    <button class="btn btn-primary" onclick="genPasswords()"><i class="ti ti-refresh"></i> Сгенерировать новые пароли</button>
-    <button class="btn" onclick="savePasswords()" id="btn-save-pwd" style="display:none;margin-left:8px"><i class="ti ti-device-floppy"></i> Сохранить в таблицу</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="genPwd()"><i class="ti ti-refresh"></i> Сгенерировать новые</button>
+      <button class="btn" id="btn-save-pwd" style="display:none" onclick="savePwd()"><i class="ti ti-device-floppy"></i> Сохранить в таблицу</button>
+    </div>
     <div id="pwd-msg"></div>
   </div>
 </div>
 
-<!-- SETTINGS (только для admin) -->
-<div id="page-settings" class="page">
+<!-- НАСТРОЙКИ -->
+<div id="pg-cfg" class="page">
   <div class="card">
-    <div class="card-title">Подключение к Google Sheets</div>
-    <div class="fg" style="margin-bottom:10px"><label>URL Apps Script</label><input type="text" id="s-url" placeholder="https://script.google.com/macros/s/.../exec"></div>
-    <button class="btn btn-primary" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить и переподключить</button>
-    <div id="s-msg"></div>
+    <div class="ct">Тариф</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Цена за кВт·ч по умолчанию для всех участников.</p>
+    <div class="fgrid" style="max-width:320px">
+      <div class="fg"><label>Тариф (₸ за кВт·ч)</label><input type="number" id="cfg-tariff" step="0.01" min="0" placeholder="36"></div>
+    </div>
+    <button class="btn btn-p" onclick="saveTariff()"><i class="ti ti-check"></i> Сохранить тариф</button>
+    <div id="tariff-msg"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Подключение к Google Sheets</div>
+    <div class="fg" style="margin-bottom:10px"><label>URL Apps Script</label><input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <button class="btn btn-p" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить</button>
+    <div id="cfg-msg"></div>
     <div class="divider"></div>
     <div style="font-size:12px;color:var(--text2);line-height:1.7">Таблица → Расширения → Apps Script → Развернуть → Управление развёртываниями → скопировать URL</div>
   </div>
   <div class="card">
-    <div class="card-title">Данные</div>
-    <button class="btn" onclick="loadData()"><i class="ti ti-refresh"></i> Перезагрузить из Sheets</button>
+    <div class="ct">Данные</div>
+    <button class="btn" onclick="load()"><i class="ti ti-refresh"></i> Перезагрузить из Sheets</button>
   </div>
 </div>
 
 <!-- LOGIN MODAL -->
-<div class="modal-overlay hidden" id="modal-overlay" onclick="closeLoginOutside(event)">
+<div class="overlay hidden" id="overlay" onclick="closeOuter(event)">
   <div class="modal">
     <div class="modal-title"><i class="ti ti-lock"></i> Вход</div>
-    <div class="modal-sub" id="modal-sub">Введите ваш 4-значный код или пароль администратора</div>
+    <div class="modal-sub">Введите ваш 4-значный код или пароль администратора</div>
     <div class="fg" style="margin-bottom:14px">
-      <input type="password" class="pin-input" id="pin-input" maxlength="10" placeholder="····" oninput="clearLoginErr()" onkeydown="if(event.key==='Enter')doLogin()">
+      <input type="password" class="pin-inp" id="pin" maxlength="10" placeholder="····" oninput="clearErr()" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" style="flex:1" onclick="doLogin()"><i class="ti ti-login"></i> Войти</button>
+      <button class="btn btn-p" style="flex:1" onclick="doLogin()"><i class="ti ti-login"></i> Войти</button>
       <button class="btn" onclick="closeLogin()">Отмена</button>
     </div>
     <div id="login-err"></div>
   </div>
 </div>
-</div>
 
+</div><!-- .shell -->
 <script>
-const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxsddNvnqSVHEj6WJGSmdIniX_85Q8sNbQ2Wp0gDwfSHdI_PDbZObWskClQnjawIntbUw/exec';
-const ADMIN_PWD = '0000'; // ← замените на свой пароль
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsddNvnqSVHEj6WJGSmdIniX_85Q8sNbQ2Wp0gDwfSHdI_PDbZObWskClQnjawIntbUw/exec';
+const ADMIN_PWD  = '0000'; // ← замените на свой пароль администратора
 
-let scriptUrl = localStorage.getItem('dacha_url') || DEFAULT_URL;
-let plots = [], busy = false, tariff = 36;
-// session: {role:'admin'|'owner', plotName?:string}
-let session = JSON.parse(sessionStorage.getItem('dacha_session')||'null');
-let pendingPasswords = null; // новые пароли до сохранения
+let url     = localStorage.getItem('dacha_url') || SCRIPT_URL;
+let plots   = [], busy = false, tariff = 36;
+let session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null');
+let pendingPwd = null;
 
-/* ── utils ── */
+/* ─── utils ─── */
 const fmt = n => Number(n).toLocaleString('ru-RU');
-const setS = (s,t) => { document.getElementById('status-dot').className='dot '+s; document.getElementById('status-text').textContent=t; };
+const setS = (s,t) => { document.getElementById('sd').className='dot '+s; document.getElementById('st').textContent=t; };
 
-function normalizeDate(str) {
+function normDate(str) {
   if (!str) return '';
   str = str.toString().trim();
   if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) return str;
-  let m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/);
+  let m;
+  m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/);
   if (m) return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.20'+m[3];
   m = str.match(/^(\d{1,2})[.,](\d{1,2})[.,](\d{2,4})$/);
   if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
@@ -250,311 +267,320 @@ function normalizeDate(str) {
   if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
   return str;
 }
-function parseDate(str) {
-  const n = normalizeDate(str);
-  const m = n.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (m) return new Date(m[3], m[2]-1, m[1]);
-  return new Date(0);
-}
-function shortName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.?\s*\d+/i,'').trim(); }
-function isRealRec(r) { return !!(r.date && (r.reading>0||r.consumption>0||r.topup>0||r.cost>0)); }
-function realRecs(p) { return (p.records||[]).filter(isRealRec); }
-function lastRec(p) { const rr=realRecs(p); return rr.length ? rr[rr.length-1] : null; }
-function normalizePlots(ps) { ps.forEach(p=>(p.records||[]).forEach(r=>{r.date=normalizeDate(r.date);})); return ps; }
+function pDate(s) { const n=normDate(s); const m=n.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m?new Date(m[3],m[2]-1,m[1]):new Date(0); }
+function sName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.?\s*\d+/i,'').trim(); }
+function isReal(r) { return !!(r.date&&(r.reading>0||r.consumption>0||r.topup>0||r.cost>0)); }
+function recs(p)   { return (p.records||[]).filter(isReal); }
+function lastR(p)  { const rr=recs(p); return rr.length?rr[rr.length-1]:null; }
+function normPlots(ps) { ps.forEach(p=>(p.records||[]).forEach(r=>{r.date=normDate(r.date);})); return ps; }
 
-/* ── auth ── */
-function isAdmin() { return session?.role==='admin'; }
-function isOwner() { return session?.role==='owner'; }
-function canEdit(plotName) { return isAdmin() || (isOwner() && session.plotName===plotName); }
+/* ─── auth ─── */
+const isAdmin = () => session?.role==='admin';
+const isOwner = () => session?.role==='owner';
+const canEdit = name => isAdmin()||(isOwner()&&session.plotName===name);
 
-function updateAuthUI() {
-  const badge = document.getElementById('user-badge');
-  const btnLogin = document.getElementById('btn-login');
-  const btnLogout = document.getElementById('btn-logout');
-  const navPwd = document.getElementById('nav-passwords');
-  const navSet = document.getElementById('nav-settings');
-
+function updateUI() {
+  const badge=document.getElementById('ubadge');
+  document.getElementById('btn-login').style.display  = session?'none':'';
+  document.getElementById('btn-logout').style.display = session?'':'none';
+  document.getElementById('nav-pwd').style.display    = isAdmin()?'':'none';
+  document.getElementById('nav-cfg').style.display    = isAdmin()?'':'none';
   if (session) {
-    btnLogin.style.display = 'none';
-    btnLogout.style.display = '';
-    badge.style.display = '';
-    if (isAdmin()) {
-      badge.className = 'user-badge admin';
-      badge.innerHTML = '<i class="ti ti-shield"></i> Администратор';
-      navPwd.style.display = '';
-      navSet.style.display = '';
-    } else {
-      badge.className = 'user-badge owner';
-      badge.innerHTML = '<i class="ti ti-user"></i> ' + shortName(session.plotName);
-      navPwd.style.display = 'none';
-      navSet.style.display = 'none';
-    }
-  } else {
-    btnLogin.style.display = '';
-    btnLogout.style.display = 'none';
-    badge.style.display = 'none';
-    navPwd.style.display = 'none';
-    navSet.style.display = 'none';
-  }
+    badge.style.display='';
+    if (isAdmin()) { badge.className='ubadge admin'; badge.innerHTML='<i class="ti ti-shield"></i> Администратор'; }
+    else           { badge.className='ubadge owner'; badge.innerHTML='<i class="ti ti-user"></i> '+sName(session.plotName); }
+  } else { badge.style.display='none'; }
 }
 
-function openLogin() { document.getElementById('modal-overlay').classList.remove('hidden'); document.getElementById('pin-input').value=''; document.getElementById('login-err').innerHTML=''; setTimeout(()=>document.getElementById('pin-input').focus(),100); }
-function closeLogin() { document.getElementById('modal-overlay').classList.add('hidden'); }
-function closeLoginOutside(e) { if(e.target===document.getElementById('modal-overlay')) closeLogin(); }
-function clearLoginErr() { document.getElementById('login-err').innerHTML=''; }
+function openLogin()  { document.getElementById('overlay').classList.remove('hidden'); document.getElementById('pin').value=''; document.getElementById('login-err').innerHTML=''; setTimeout(()=>document.getElementById('pin').focus(),100); }
+function closeLogin() { document.getElementById('overlay').classList.add('hidden'); }
+function closeOuter(e){ if(e.target===document.getElementById('overlay')) closeLogin(); }
+function clearErr()   { document.getElementById('login-err').innerHTML=''; }
 
 async function doLogin() {
-  const pin = document.getElementById('pin-input').value.trim();
+  const pin = document.getElementById('pin').value.trim();
   if (!pin) return;
-  // Проверяем пароль администратора локально
   if (pin === ADMIN_PWD) {
-    session = { role:'admin' };
-    sessionStorage.setItem('dacha_session', JSON.stringify(session));
-    closeLogin();
-    updateAuthUI();
-    renderAddPage();
+    session = {role:'admin'};
+    sessionStorage.setItem('dacha_sess', JSON.stringify(session));
+    closeLogin(); updateUI(); renderAdd(); renderPayPage();
     return;
   }
-  // Проверяем пароль владельца через Apps Script
   try {
-    const res = await fetch(scriptUrl + '?action=checkPassword&password=' + encodeURIComponent(pin));
-    const d = await res.json();
-    if (d.ok && d.role === 'owner') {
-      session = { role:'owner', plotName: d.plotName };
-      sessionStorage.setItem('dacha_session', JSON.stringify(session));
-      closeLogin();
-      updateAuthUI();
-      renderAddPage();
+    const r = await fetch(url+'?action=checkPassword&password='+encodeURIComponent(pin));
+    const d = await r.json();
+    if (d.ok && d.role==='owner') {
+      session = {role:'owner', plotName:d.plotName};
+      sessionStorage.setItem('dacha_sess', JSON.stringify(session));
+      closeLogin(); updateUI(); renderAdd(); renderPayPage();
     } else {
-      document.getElementById('login-err').innerHTML = '<div class="msg msg-err">Неверный код</div>';
+      document.getElementById('login-err').innerHTML='<div class="msg merr">Неверный код</div>';
     }
-  } catch(e) {
-    document.getElementById('login-err').innerHTML = '<div class="msg msg-err">Ошибка соединения</div>';
-  }
+  } catch(e) { document.getElementById('login-err').innerHTML='<div class="msg merr">Ошибка соединения</div>'; }
 }
 
-function logout() {
-  session = null;
-  sessionStorage.removeItem('dacha_session');
-  updateAuthUI();
-  renderAddPage();
-  showPage('overview');
+function logout() { session=null; sessionStorage.removeItem('dacha_sess'); updateUI(); renderAdd(); renderPayPage(); go('ov'); }
+
+/* ─── nav ─── */
+const PAGES = ['ov','pl','add','pay','pwd','cfg'];
+function go(id) {
+  PAGES.forEach(p=>document.getElementById('pg-'+p).classList.toggle('active',p===id));
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('active',PAGES[i]===id));
+  if(id==='ov')  renderOv();
+  if(id==='pl')  renderPl();
+  if(id==='add') renderAdd();
+  if(id==='pay') renderPayPage();
+  if(id==='pwd') renderPwd();
+  if(id==='cfg') { document.getElementById('cfg-url').value=url; document.getElementById('cfg-tariff').value=tariff; }
 }
 
-/* ── navigation ── */
-const PAGES = ['overview','plots','add','passwords','settings'];
-function showPage(id) {
-  PAGES.forEach(p => document.getElementById('page-'+p).classList.toggle('active',p===id));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const map = {overview:0,plots:1,add:2,passwords:3,settings:4};
-  if (map[id] !== undefined) document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
-  if (id==='overview') renderOverview();
-  if (id==='plots') renderPlots();
-  if (id==='add') renderAddPage();
-  if (id==='passwords') renderPasswords();
-  if (id==='settings') document.getElementById('s-url').value = scriptUrl;
-}
-
-/* ── data load ── */
-async function loadData() {
-  if (busy) return; busy = true;
-  setS('loading','Загрузка...');
+/* ─── load ─── */
+async function load() {
+  if (busy) return; busy=true;
+  setS('spin','Загрузка...');
   try {
-    const r = await fetch(scriptUrl + '?action=getData');
+    const r = await fetch(url+'?action=getData');
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    plots = normalizePlots((d.plots||[]).filter(p=>p.name&&!p.name.startsWith('Дата')));
+    plots = normPlots((d.plots||[]).filter(p=>p.name&&!p.name.startsWith('Дата')));
+    // Загружаем тариф
+    try { const tr=await fetch(url+'?action=getTariff'); const td=await tr.json(); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
     setS('ok','Обновлено в '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
-    renderOverview();
-    if (document.getElementById('page-plots').classList.contains('active')) renderPlots();
-    if (document.getElementById('page-add').classList.contains('active')) renderAddPage();
-    if (document.getElementById('page-passwords').classList.contains('active')) renderPasswords();
-  } catch(e) {
-    setS('err','Ошибка: '+e.message);
-  }
-  busy = false;
+    renderOv();
+    if(document.getElementById('pg-pl').classList.contains('active'))  renderPl();
+    if(document.getElementById('pg-add').classList.contains('active')) renderAdd();
+    if(document.getElementById('pg-pay').classList.contains('active')) renderPayPage();
+    if(document.getElementById('pg-pwd').classList.contains('active')) renderPwd();
+  } catch(e) { setS('err','Ошибка: '+e.message); }
+  busy=false;
 }
 
-/* ── overview ── */
-function renderOverview() {
+/* ─── overview ─── */
+function renderOv() {
   if (!plots.length) return;
   let debt=0,cred=0,dn=0;
-  plots.forEach(p=>{ const l=lastRec(p); if(!l)return; const b=Number(l.balance)||0; if(b<0){debt+=Math.abs(b);dn++;}else cred+=b; });
-  document.getElementById('ov-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Участков</div><div class="metric-value">${plots.length}</div></div>
-    <div class="metric"><div class="metric-label">Должников</div><div class="metric-value neg">${dn}</div></div>
-    <div class="metric"><div class="metric-label">Общий долг</div><div class="metric-value">${fmt(Math.round(debt))}<span class="metric-unit">₸</span></div></div>
-    <div class="metric"><div class="metric-label">Переплат</div><div class="metric-value pos">${fmt(Math.round(cred))}<span class="metric-unit">₸</span></div></div>`;
-  const sorted=[...plots].sort((a,b)=>(Number(lastRec(a)?.balance)||0)-(Number(lastRec(b)?.balance)||0));
-  let dh='<div class="tbl-wrap"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th></tr></thead><tbody>';
-  sorted.forEach(p=>{ const l=lastRec(p); if(!l)return; const b=Number(l.balance)||0;
-    dh+=`<tr><td>${shortName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${b>=0?'<span class="badge badge-ok">ОК</span>':'<span class="badge badge-danger">Долг</span>'}</td></tr>`; });
-  dh+='</tbody></table></div>';
-  document.getElementById('ov-debts').innerHTML=dh;
+  plots.forEach(p=>{ const l=lastR(p); if(!l)return; const b=Number(l.balance)||0; if(b<0){debt+=Math.abs(b);dn++;}else cred+=b; });
+  document.getElementById('ov-m').innerHTML=`
+    <div class="met"><div class="ml">Участков</div><div class="mv">${plots.length}</div></div>
+    <div class="met"><div class="ml">Должников</div><div class="mv neg">${dn}</div></div>
+    <div class="met"><div class="ml">Общий долг</div><div class="mv">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
+    <div class="met"><div class="ml">Переплат</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>`;
+  const sorted=[...plots].sort((a,b)=>(Number(lastR(a)?.balance)||0)-(Number(lastR(b)?.balance)||0));
+  let dh='<div class="ow"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th></tr></thead><tbody>';
+  sorted.forEach(p=>{ const l=lastR(p); if(!l)return; const b=Number(l.balance)||0;
+    dh+=`<tr><td>${sName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>'}</td></tr>`; });
+  document.getElementById('ov-d').innerHTML=dh+'</tbody></table></div>';
   let rec=[];
-  plots.forEach(p=>{ const l=lastRec(p); if(l) rec.push({pn:p.name,...l}); });
-  rec.sort((a,b)=>parseDate(b.date)-parseDate(a.date)); rec=rec.slice(0,8);
-  let rh='<div class="tbl-wrap"><table><thead><tr><th>Участок</th><th>Дата</th><th class="tr">Расход</th><th class="tr">Сумма</th></tr></thead><tbody>';
-  rec.forEach(r=>{ rh+=`<tr><td class="tnowrap">${shortName(r.pn)}</td><td class="tnowrap">${r.date}</td><td class="tr">${r.consumption} кВт</td><td class="tr">${fmt(r.cost)} ₸</td></tr>`; });
-  rh+='</tbody></table></div>';
-  document.getElementById('ov-recent').innerHTML=rh;
+  plots.forEach(p=>{ const l=lastR(p); if(l) rec.push({pn:p.name,...l}); });
+  rec.sort((a,b)=>pDate(b.date)-pDate(a.date)); rec=rec.slice(0,8);
+  let rh='<div class="ow"><table><thead><tr><th>Участок</th><th>Дата</th><th class="tr">Расход</th><th class="tr">Сумма</th></tr></thead><tbody>';
+  rec.forEach(r=>{ rh+=`<tr><td class="tnw">${sName(r.pn)}</td><td class="tnw">${r.date}</td><td class="tr">${r.consumption} кВт</td><td class="tr">${fmt(r.cost)} ₸</td></tr>`; });
+  document.getElementById('ov-r').innerHTML=rh+'</tbody></table></div>';
 }
 
-/* ── plots ── */
-function renderPlots() {
-  const el=document.getElementById('plots-list');
-  if (!plots.length){el.innerHTML='<div class="loading-block">Нет данных</div>';return;}
+/* ─── plots ─── */
+function renderPl() {
+  const el=document.getElementById('pl-list');
+  if(!plots.length){el.innerHTML='<div class="loading">Нет данных</div>';return;}
   el.innerHTML=plots.map((p,i)=>{
-    const l=lastRec(p),b=l?Number(l.balance):null;
+    const l=lastR(p),b=l?Number(l.balance):null;
     const bCls=b===null?'':b>=0?'pos':'neg';
-    const badge=b===null?'':b>=0?'<span class="badge badge-ok">ОК</span>':'<span class="badge badge-danger">Долг</span>';
-    const editBtn=canEdit(p.name)?`<button class="btn btn-sm" style="margin-top:10px" onclick="event.stopPropagation();prefillAdd(${i})"><i class="ti ti-plus"></i> Добавить запись</button>`:'';
-    return `<div class="plot-card" id="pc-${i}" onclick="togglePlot(${i})">
-      <div class="plot-head">
-        <div><div class="plot-name">${p.name}</div><div class="plot-meta">${realRecs(p).length} записей · ${l?l.date:'нет данных'}</div></div>
+    const badge=b===null?'':b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>';
+    const btns=canEdit(p.name)?`<div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn btn-sm" onclick="event.stopPropagation();goAdd(${i})"><i class="ti ti-plus"></i> Запись</button>
+      <button class="btn btn-sm" onclick="event.stopPropagation();goPay(${i})"><i class="ti ti-cash"></i> Оплата</button>
+    </div>`:'';
+    return `<div class="pc" id="pc${i}" onclick="tog(${i})">
+      <div class="pch">
+        <div><div class="pname">${p.name}</div><div class="pmeta">${recs(p).length} записей · ${l?l.date:'нет данных'}</div></div>
         <div style="display:flex;align-items:center;gap:8px">${badge}<div class="${bCls}" style="font-size:15px;white-space:nowrap">${b!==null?fmt(Math.round(b))+' ₸':'—'}</div></div>
       </div>
-      <div class="plot-detail" id="pd-${i}">${renderPlotTable(p)}${editBtn}</div>
+      <div class="pd" id="pd${i}">${makeTbl(p)}${btns}</div>
     </div>`;
   }).join('');
 }
-function togglePlot(i){document.getElementById('pc-'+i).classList.toggle('open');}
-function renderPlotTable(p) {
-  const recs=realRecs(p).slice().reverse();
-  if(!recs.length) return '<p style="font-size:12px;color:var(--text2)">Нет записей</p>';
-  let h='<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Пополнение</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>';
-  recs.forEach(r=>{const b=Number(r.balance);
-    h+=`<tr><td class="tnowrap">${r.date}</td><td class="tr">${fmt(r.reading)}</td><td class="tr">${r.consumption}</td><td class="tr">${r.price}</td><td class="tr">${fmt(r.cost)}</td><td class="tr">${r.topup?fmt(r.topup):'—'}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td style="font-size:11px">${r.checkNum||''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note||''}</td></tr>`;});
+function tog(i){document.getElementById('pc'+i).classList.toggle('open');}
+function makeTbl(p){
+  const rs=recs(p).slice().reverse();
+  if(!rs.length) return '<p style="font-size:13px;color:var(--text2)">Нет записей</p>';
+  let h='<div class="ow"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Пополнение</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>';
+  rs.forEach(r=>{const b=Number(r.balance);
+    h+=`<tr><td class="tnw">${r.date}</td><td class="tr">${fmt(r.reading)}</td><td class="tr">${r.consumption}</td><td class="tr">${r.price}</td><td class="tr">${fmt(r.cost)}</td><td class="tr">${r.topup?fmt(r.topup):'—'}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td style="font-size:11px">${r.checkNum||''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note||''}</td></tr>`;});
   return h+'</tbody></table></div>';
 }
 
-/* ── add page ── */
-function renderAddPage() {
-  const prompt=document.getElementById('add-login-prompt');
-  const form=document.getElementById('add-form-wrap');
-  if (!session) { prompt.style.display=''; form.style.display='none'; return; }
-  prompt.style.display='none'; form.style.display='';
-  const sel=document.getElementById('a-plot');
-  const available = isAdmin() ? plots : plots.filter(p=>p.name===session.plotName);
-  sel.innerHTML=available.map((p,i)=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
+/* ─── add ─── */
+function renderAdd() {
+  const prompt=document.getElementById('add-prompt'), form=document.getElementById('add-form');
+  if(!session){prompt.style.display='';form.style.display='none';return;}
+  prompt.style.display='none';form.style.display='';
+  const avail=isAdmin()?plots:plots.filter(p=>p.name===session.plotName);
+  document.getElementById('a-plot').innerHTML=avail.map(p=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
   document.getElementById('a-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('a-price').value=tariff;
   fillPrev();
 }
-function prefillAdd(idx) {
-  if (!canEdit(plots[idx].name)) { openLogin(); return; }
-  showPage('add');
-  setTimeout(()=>{ document.getElementById('a-plot').value=idx; fillPrev(); },100);
-}
-function fillPrev() {
+function goAdd(idx){if(!canEdit(plots[idx].name)){openLogin();return;}go('add');setTimeout(()=>{document.getElementById('a-plot').value=idx;fillPrev();},150);}
+function fillPrev(){
   const idx=parseInt(document.getElementById('a-plot')?.value);
   if(isNaN(idx)||!plots[idx])return;
-  const l=lastRec(plots[idx]);
+  const l=lastR(plots[idx]);
   document.getElementById('a-prev').value=l?l.reading:'';
-  document.getElementById('a-balbefore').value=l?Math.round(Number(l.balance)):'';
-  calcCons();
+  document.getElementById('a-bb').value=l?Math.round(Number(l.balance)):'';
+  calcAdd();
 }
-function calcCons() {
-  const nr=parseFloat(document.getElementById('a-reading')?.value);
+function calcAdd(){
+  const nr=parseFloat(document.getElementById('a-read')?.value);
   const pr=parseFloat(document.getElementById('a-prev')?.value);
-  const price=parseFloat(document.getElementById('a-price')?.value)||36;
+  const price=parseFloat(document.getElementById('a-price')?.value)||tariff;
   const topup=parseFloat(document.getElementById('a-topup')?.value)||0;
-  const bb=parseFloat(document.getElementById('a-balbefore')?.value)||0;
+  const bb=parseFloat(document.getElementById('a-bb')?.value)||0;
   if(!isNaN(nr)&&!isNaN(pr)){
     const cons=Math.max(0,nr-pr),cost=cons*price,nb=bb+topup-cost;
     document.getElementById('a-cons').value=cons;
     document.getElementById('a-preview').innerHTML=`<strong>Расход:</strong> ${cons} кВт·ч &nbsp;·&nbsp; <strong>Стоимость:</strong> ${fmt(Math.round(cost))} ₸ &nbsp;·&nbsp; <strong>Новый баланс:</strong> <span class="${nb>=0?'pos':'neg'}">${fmt(Math.round(nb))} ₸</span>`;
-  } else { document.getElementById('a-cons').value=''; document.getElementById('a-preview').textContent='Введите показание для расчёта'; }
+  }else{document.getElementById('a-cons').value='';document.getElementById('a-preview').textContent='Введите показание для расчёта';}
 }
-async function submitRecord() {
+async function submitAdd(){
   const idx=parseInt(document.getElementById('a-plot').value);
-  const plot=plots[idx]; if(!plot||!canEdit(plot.name))return;
-  const reading=parseFloat(document.getElementById('a-reading').value);
-  const prevReading=parseFloat(document.getElementById('a-prev').value)||0;
-  const price=parseFloat(document.getElementById('a-price').value)||36;
+  const plot=plots[idx];if(!plot||!canEdit(plot.name))return;
+  const reading=parseFloat(document.getElementById('a-read').value);
+  const prevR=parseFloat(document.getElementById('a-prev').value)||0;
+  const price=parseFloat(document.getElementById('a-price').value)||tariff;
   const topup=parseFloat(document.getElementById('a-topup').value)||0;
-  const balanceBefore=parseFloat(document.getElementById('a-balbefore').value)||0;
+  const bb=parseFloat(document.getElementById('a-bb').value)||0;
   const date=document.getElementById('a-date').value;
   const msgEl=document.getElementById('a-msg');
-  if(!reading||!date){msgEl.innerHTML='<div class="msg msg-err">Укажите дату и показание</div>';return;}
-  if(reading<prevReading){msgEl.innerHTML='<div class="msg msg-err">Новое показание меньше предыдущего</div>';return;}
-  const consumption=Math.max(0,reading-prevReading);
-  const body={action:'addRecord',plotName:plot.name,date:date.split('-').reverse().join('.'),reading,prevReading,consumption,price,topup,balanceBefore,checkNum:document.getElementById('a-check').value,note:document.getElementById('a-note').value};
-  const btn=document.getElementById('a-submit');
-  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...'; msgEl.innerHTML='';
-  try {
-    const r=await fetch(scriptUrl,{method:'POST',body:JSON.stringify(body)});
-    const d=await r.json(); if(d.error) throw new Error(d.error);
-    msgEl.innerHTML=`<div class="msg msg-ok">Записано! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
-    ['a-reading','a-topup','a-check','a-note'].forEach(id=>document.getElementById(id).value='');
-    await loadData(); fillPrev();
-  } catch(e){ msgEl.innerHTML=`<div class="msg msg-err">Ошибка: ${e.message}</div>`; }
-  btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в Google Sheets';
+  if(!reading||!date){msgEl.innerHTML='<div class="msg merr">Укажите дату и показание</div>';return;}
+  if(reading<prevR){msgEl.innerHTML='<div class="msg merr">Новое показание меньше предыдущего</div>';return;}
+  const cons=Math.max(0,reading-prevR);
+  const body={action:'addRecord',plotName:plot.name,date:date.split('-').reverse().join('.'),reading,prevReading:prevR,consumption:cons,price,topup,balanceBefore:bb,checkNum:document.getElementById('a-chk').value,note:document.getElementById('a-note').value};
+  const btn=document.getElementById('a-btn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
+  try{
+    const r=await fetch(url,{method:'POST',body:JSON.stringify(body)});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    msgEl.innerHTML=`<div class="msg mok">Записано! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
+    ['a-read','a-topup','a-chk','a-note'].forEach(id=>document.getElementById(id).value='');
+    await load();fillPrev();
+  }catch(e){msgEl.innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в Google Sheets';
 }
 
-/* ── passwords ── */
-function renderPasswords() {
-  if (!isAdmin()) return;
-  const el=document.getElementById('pwd-table');
-  if(!plots.length){el.innerHTML='<p style="color:var(--text2);font-size:13px">Загрузка...</p>';return;}
-  const source = pendingPasswords || plots;
+/* ─── payment ─── */
+function renderPayPage(){
+  const prompt=document.getElementById('pay-prompt'),form=document.getElementById('pay-form');
+  if(!session){prompt.style.display='';form.style.display='none';return;}
+  prompt.style.display='none';form.style.display='';
+  const avail=isAdmin()?plots:plots.filter(p=>p.name===session.plotName);
+  document.getElementById('pay-plot').innerHTML=avail.map(p=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
+  fillPayInfo();
+}
+function goPay(idx){if(!canEdit(plots[idx].name)){openLogin();return;}go('pay');setTimeout(()=>{document.getElementById('pay-plot').value=idx;fillPayInfo();},150);}
+function fillPayInfo(){
+  const idx=parseInt(document.getElementById('pay-plot')?.value);
+  if(isNaN(idx)||!plots[idx])return;
+  const l=lastR(plots[idx]);
+  const el=document.getElementById('pay-info');
+  if(!l){el.textContent='Нет записей для этого участка';return;}
+  const topupStr=l.topup?fmt(l.topup)+' ₸':'—';
+  const b=Number(l.balance)||0;
+  el.innerHTML=`<strong>Последняя запись:</strong> ${l.date} &nbsp;·&nbsp; <strong>Расход:</strong> ${l.consumption} кВт·ч &nbsp;·&nbsp; <strong>Стоимость:</strong> ${fmt(l.cost)} ₸<br><strong>Текущее пополнение:</strong> ${topupStr} &nbsp;·&nbsp; <strong>Баланс:</strong> <span class="${b>=0?'pos':'neg'}">${fmt(Math.round(b))} ₸</span>`;
+  calcPay();
+}
+function calcPay(){
+  const idx=parseInt(document.getElementById('pay-plot')?.value);
+  const amount=parseFloat(document.getElementById('pay-amount')?.value)||0;
+  const el=document.getElementById('pay-preview');
+  if(!plots[idx]||!amount){el.textContent='Введите сумму для расчёта нового баланса';return;}
+  const l=lastR(plots[idx]);if(!l)return;
+  const newTopup=(Number(l.topup)||0)+amount;
+  const newBal=(Number(l.balanceBefore)||0)+newTopup-(Number(l.cost)||0);
+  el.innerHTML=`<strong>Пополнение станет:</strong> ${fmt(newTopup)} ₸ &nbsp;·&nbsp; <strong>Новый баланс:</strong> <span class="${newBal>=0?'pos':'neg'}">${fmt(Math.round(newBal))} ₸</span>`;
+}
+async function submitPay(){
+  const idx=parseInt(document.getElementById('pay-plot').value);
+  const plot=plots[idx];if(!plot||!canEdit(plot.name))return;
+  const amount=parseFloat(document.getElementById('pay-amount').value);
+  const msgEl=document.getElementById('pay-msg');
+  if(!amount||amount<=0){msgEl.innerHTML='<div class="msg merr">Укажите сумму оплаты</div>';return;}
+  const body={action:'updatePayment',plotName:plot.name,topup:amount,checkNum:document.getElementById('pay-chk').value,note:document.getElementById('pay-note').value};
+  const btn=document.getElementById('pay-btn');
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
+  try{
+    const r=await fetch(url,{method:'POST',body:JSON.stringify(body)});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    msgEl.innerHTML=`<div class="msg mok">Оплата внесена! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
+    ['pay-amount','pay-chk','pay-note'].forEach(id=>document.getElementById(id).value='');
+    await load();fillPayInfo();
+  }catch(e){msgEl.innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-cash"></i> Сохранить оплату';
+}
+
+/* ─── passwords ─── */
+function renderPwd(){
+  if(!isAdmin())return;
+  const el=document.getElementById('pwd-list');
+  if(!plots.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Загрузка...</p>';return;}
   let h='';
-  source.forEach((p,i)=>{
-    const pwd = pendingPasswords ? (pendingPasswords[i].newPwd||'—') : (p.storedPwd||'не задан');
-    const changed = pendingPasswords ? '<span style="font-size:11px;color:var(--amber-text)"> несохранён</span>' : '';
+  plots.forEach((p,i)=>{
+    const code=pendingPwd?(pendingPwd[i]?.newPwd||'—'):(p.storedPwd||'—');
+    const tag=pendingPwd?'<span style="font-size:10px;color:var(--amber);margin-left:6px">● новый</span>':'';
+    const codeStyle=(!pendingPwd&&!p.storedPwd)?'style="color:var(--text3)"':'';
     h+=`<div class="pwd-row">
       <div style="font-size:13px">${p.name}</div>
-      <div class="pwd-code">${pwd}${changed}</div>
+      <div><span class="pwd-code" ${codeStyle}>${code}</span>${tag}</div>
     </div>`;
   });
   el.innerHTML=h;
 }
-
-function genPasswords() {
-  if(!isAdmin()) return;
+function genPwd(){
+  if(!isAdmin())return;
   const used=new Set();
-  pendingPasswords = plots.map(p=>{
-    let code;
-    do { code=String(Math.floor(1000+Math.random()*9000)); } while(used.has(code));
-    used.add(code);
-    return {...p, newPwd: code};
-  });
+  pendingPwd=plots.map(p=>{let c;do{c=String(Math.floor(1000+Math.random()*9000));}while(used.has(c));used.add(c);return{...p,newPwd:c};});
   document.getElementById('btn-save-pwd').style.display='';
-  renderPasswords();
+  renderPwd();
 }
-
-async function savePasswords() {
-  if(!isAdmin()||!pendingPasswords) return;
+async function savePwd(){
+  if(!isAdmin()||!pendingPwd)return;
   const btn=document.getElementById('btn-save-pwd');
-  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';
-  try {
-    const pwdMap = pendingPasswords.map(p=>({plotName:p.name, password:p.newPwd}));
-    const r=await fetch(scriptUrl,{method:'POST',body:JSON.stringify({action:'savePasswords',passwords:pwdMap})});
-    const d=await r.json(); if(d.error) throw new Error(d.error);
-    document.getElementById('pwd-msg').innerHTML='<div class="msg msg-ok">Пароли сохранены в таблицу!</div>';
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';
+  try{
+    const pwdMap=pendingPwd.map(p=>({plotName:p.name,password:p.newPwd}));
+    const r=await fetch(url,{method:'POST',body:JSON.stringify({action:'savePasswords',passwords:pwdMap})});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    document.getElementById('pwd-msg').innerHTML='<div class="msg mok">Пароли сохранены в таблицу!</div>';
     setTimeout(()=>document.getElementById('pwd-msg').innerHTML='',3000);
-    pendingPasswords=null;
-    btn.style.display='none';
-    await loadData();
-    renderPasswords();
-  } catch(e){
-    document.getElementById('pwd-msg').innerHTML=`<div class="msg msg-err">Ошибка: ${e.message}</div>`;
-  }
-  btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в таблицу';
+    pendingPwd=null;btn.style.display='none';
+    await load();renderPwd();
+  }catch(e){document.getElementById('pwd-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в таблицу';
 }
 
-/* ── settings ── */
-function saveUrl() {
-  const url=document.getElementById('s-url').value.trim(); if(!url)return;
-  scriptUrl=url; localStorage.setItem('dacha_url',url);
-  document.getElementById('s-msg').innerHTML='<div class="msg msg-ok">Сохранено</div>';
-  setTimeout(()=>document.getElementById('s-msg').innerHTML='',3000);
-  loadData();
+/* ─── settings ─── */
+async function saveTariff(){
+  if(!isAdmin())return;
+  const t=parseFloat(document.getElementById('cfg-tariff').value);
+  if(!t||t<=0){document.getElementById('tariff-msg').innerHTML='<div class="msg merr">Введите корректный тариф</div>';return;}
+  try{
+    const r=await fetch(url,{method:'POST',body:JSON.stringify({action:'setTariff',tariff:t})});
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    tariff=t;
+    document.getElementById('tariff-msg').innerHTML=`<div class="msg mok">Тариф сохранён: ${t} ₸/кВт·ч</div>`;
+    setTimeout(()=>document.getElementById('tariff-msg').innerHTML='',3000);
+  }catch(e){document.getElementById('tariff-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
+}
+function saveUrl(){
+  const v=document.getElementById('cfg-url').value.trim();if(!v)return;
+  url=v;localStorage.setItem('dacha_url',v);
+  document.getElementById('cfg-msg').innerHTML='<div class="msg mok">Сохранено</div>';
+  setTimeout(()=>document.getElementById('cfg-msg').innerHTML='',2500);
+  load();
 }
 
-/* ── init ── */
-updateAuthUI();
-loadData();
+/* ─── init ─── */
+updateUI();
+load();
 </script>
 </body>
 </html>
