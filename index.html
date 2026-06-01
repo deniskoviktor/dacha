@@ -289,8 +289,9 @@ function parseDate(str) {
   if (m) { const y = m[3].length===2?'20'+m[3]:m[3]; return new Date(y, m[2]-1, m[1]); }
   return new Date(str);
 }
-function shortName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.\s*\d+/i,'').trim(); }
-function lastRec(p) { return p.records?.length ? p.records[p.records.length-1] : null; }
+function shortName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.?\s*\d+/i,'').trim(); }
+function realRecs(p) { return (p.records||[]).filter(r=>r.date); }
+function lastRec(p) { const rr=realRecs(p); return rr.length ? rr[rr.length-1] : null; }
 
 /* ── navigation ── */
 const PAGES = ['overview','plots','add','settings'];
@@ -314,7 +315,7 @@ async function loadData() {
     const r = await fetch(scriptUrl + '?action=getData');
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    plots = d.plots || [];
+    plots = (d.plots || []).filter(p => p.name && !p.name.startsWith('Дата'));
     const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     setStatus('ok','Обновлено в '+t);
     renderOverview();
@@ -387,7 +388,7 @@ function renderPlots() {
     const bStr = b !== null ? fmt(Math.round(b))+' ₸' : '—';
     const bCls = b===null?'':b>=0?'pos':'neg';
     const badge = b===null?'':b>=0?'<span class="badge badge-ok">ОК</span>':'<span class="badge badge-danger">Долг</span>';
-    const recs = p.records?.length||0;
+    const recs = realRecs(p).length;
     const lastDate = l?l.date:'нет записей';
     return `
     <div class="plot-card" id="pc-${i}" onclick="togglePlot(${i})">
@@ -414,7 +415,7 @@ function togglePlot(i) {
 }
 
 function renderPlotTable(p) {
-  const recs = (p.records||[]).slice().reverse();
+  const recs = realRecs(p).slice().reverse();
   if (!recs.length) return '<p style="color:var(--text2);font-size:13px">Нет записей</p>';
   let h = '<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Пополнение</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>';
   recs.forEach(r => {
