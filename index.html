@@ -241,7 +241,7 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsddNvnqSVHEj6WJGSmdIniX_85Q8sNbQ2Wp0gDwfSHdI_PDbZObWskClQnjawIntbUw/exec';
 const ADMIN_PWD  = '4588';
-const APP_VER    = 'ғ'; // ← увеличьте на 1 при каждом обновлении Apps Script
+const APP_VER    = '7'; // ← увеличьте на 1 при каждом обновлении Apps Script
 
 let url     = localStorage.getItem('dacha_url') || SCRIPT_URL;
 let plots   = [], busy = false, tariff = 36;
@@ -360,17 +360,44 @@ async function load() {
 /* ─── overview ─── */
 function renderOv() {
   if (!plots.length) return;
-  let debt=0,cred=0,dn=0;
-  plots.forEach(p=>{ const l=lastR(p); if(!l)return; const b=Number(l.balance)||0; if(b<0){debt+=Math.abs(b);dn++;}else cred+=b; });
+  let debt=0,cred=0,dn=0,overdue=0;
+  const _now=new Date();
+  plots.forEach(p=>{
+    const l=lastR(p); if(!l)return;
+    const b=Number(l.balance)||0;
+    if(b<0){debt+=Math.abs(b);dn++;}else cred+=b;
+    // Считаем просроченных: не сдавали >2 мес, активны после 2023, не пустые
+    const ld=pDate(l.date);
+    const mo=(_now-ld)/(1000*60*60*24*30);
+    const yr=ld.getFullYear();
+    const isEmpty=!l.date||recs(p).length===0;
+    if(!isEmpty&&yr>2023&&mo>2) overdue++;
+  });
   document.getElementById('ov-m').innerHTML=`
     <div class="met"><div class="ml">Участков</div><div class="mv">${plots.length}</div></div>
     <div class="met"><div class="ml">Должников</div><div class="mv neg">${dn}</div></div>
     <div class="met"><div class="ml">Общий долг</div><div class="mv">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
-    <div class="met"><div class="ml">Переплат</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>`;
+    <div class="met"><div class="ml">Переплат</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
+    <div class="met" style="border:.5px solid var(--red)"><div class="ml" style="color:var(--red)">Нет показаний &gt;2 мес</div><div class="mv neg">${overdue}</div></div>`;
+  const now = new Date();
   const sorted=[...plots].sort((a,b)=>(Number(lastR(a)?.balance)||0)-(Number(lastR(b)?.balance)||0));
-  let dh='<div class="ow"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th></tr></thead><tbody>';
-  sorted.forEach(p=>{ const l=lastR(p); if(!l)return; const b=Number(l.balance)||0;
-    dh+=`<tr><td>${sName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>'}</td></tr>`; });
+  let dh='<div class="ow"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th><th>Показания</th></tr></thead><tbody>';
+  sorted.forEach(p=>{
+    const l=lastR(p); if(!l)return;
+    const b=Number(l.balance)||0;
+    const lastDate=pDate(l.date);
+    const monthsAgo=(now-lastDate)/(1000*60*60*24*30);
+    // Игнорируем участки без активности с 2023 года или совсем пустые
+    const lastYear=lastDate.getFullYear();
+    const isEmpty=!l.date||recs(p).length===0;
+    const inactive2023=lastYear>0&&lastYear<=2023;
+    let actBadge='';
+    if(!isEmpty&&!inactive2023&&monthsAgo>2){
+      actBadge='<span style="color:#a32d2d;font-size:16px;font-weight:bold" title="Более 2 месяцев без показаний">↑</span>';
+    }
+    const statusBadge=b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>';
+    dh+=`<tr><td>${sName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${statusBadge}</td><td style="text-align:center">${actBadge}</td></tr>`;
+  });
   document.getElementById('ov-d').innerHTML=dh+'</tbody></table></div>';
   let rec=[];
   plots.forEach(p=>{ const l=lastR(p); if(l) rec.push({pn:p.name,...l}); });
