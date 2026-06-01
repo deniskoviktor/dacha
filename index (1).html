@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Учёт электроэнергии — Дача</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.9.0/dist/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #efefec;
+    --text: #1a1a18;
+    --text2: #6b6b66;
+    --text3: #9e9e99;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --green-bg: #eaf3de; --green-text: #3b6d11;
+    --red-bg: #fcebeb;   --red-text: #a32d2d;
+    --amber-bg: #faeeda; --amber-text: #854f0b;
+    --blue-bg: #e6f1fb;  --blue-text: #185fa5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #2a2a28;
+      --bg3: #333331;
+      --text: #f0f0ec;
+      --text2: #a0a09a;
+      --text3: #6e6e68;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --green-bg: #173404; --green-text: #c0dd97;
+      --red-bg: #501313;   --red-text: #f7c1c1;
+      --amber-bg: #412402; --amber-text: #fac775;
+      --blue-bg: #042c53;  --blue-text: #b5d4f4;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 14px; min-height: 100vh; }
+  
+  .shell { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
+
+  /* HEADER */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 12px; gap: 12px; flex-wrap: wrap; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 36px; height: 36px; background: var(--text); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; }
+  .logo-icon i { color: var(--bg); font-size: 20px; }
+  .logo-title { font-size: 17px; font-weight: 600; }
+  .logo-sub { font-size: 12px; color: var(--text2); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #888; flex-shrink: 0; }
+  .dot.ok { background: #3b6d11; }
+  .dot.err { background: #a32d2d; }
+  .dot.loading { background: #ba7517; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.35} }
+  .icon-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); cursor: pointer; font-size: 13px; color: var(--text2); font-family: inherit; transition: background .15s; }
+  .icon-btn:hover { background: var(--bg2); color: var(--text); }
+
+  /* NAV */
+  nav { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+  .nav-btn { padding: 7px 15px; border: 0.5px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--text2); cursor: pointer; font-size: 13px; font-family: inherit; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+  .nav-btn:hover { background: var(--bg2); color: var(--text); }
+  .nav-btn.active { background: var(--bg); color: var(--text); border-color: var(--border2); font-weight: 500; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* METRICS */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
+  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 600; line-height: 1.1; }
+  .metric-unit { font-size: 12px; color: var(--text2); margin-left: 2px; font-weight: 400; }
+
+  /* TABLE */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; font-size: 11px; color: var(--text2); padding: 6px 8px; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 0.5px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+  .tr { text-align: right; }
+  .tnowrap { white-space: nowrap; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .fg label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  input, select, textarea {
+    font-family: inherit; font-size: 13px; width: 100%;
+    background: var(--bg); color: var(--text);
+    border: 0.5px solid var(--border2); border-radius: var(--radius);
+    padding: 7px 10px; outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--text2); }
+  input[readonly] { background: var(--bg2); color: var(--text2); }
+  textarea { resize: vertical; min-height: 56px; }
+  .btn { padding: 8px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer; font-size: 13px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
+  .btn:hover { background: var(--bg2); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: transparent; }
+  .btn-primary:hover { opacity: .85; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-danger { color: var(--red-text); border-color: var(--red-text); }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: var(--radius); font-size: 11px; font-weight: 500; }
+  .badge-ok { background: var(--green-bg); color: var(--green-text); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber-text); }
+  .badge-danger { background: var(--red-bg); color: var(--red-text); }
+  .badge-info { background: var(--blue-bg); color: var(--blue-text); }
+
+  /* COLOR */
+  .pos { color: var(--green-text); font-weight: 500; }
+  .neg { color: var(--red-text); font-weight: 500; }
+
+  /* MSG */
+  .msg { padding: 8px 12px; border-radius: var(--radius); font-size: 13px; margin-top: 10px; }
+  .msg-ok { background: var(--green-bg); color: var(--green-text); }
+  .msg-err { background: var(--red-bg); color: var(--red-text); }
+
+  /* PLOT CARDS */
+  .plot-card { border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .plot-card:hover { border-color: var(--border2); background: var(--bg2); }
+  .plot-card.open { border-color: var(--border2); }
+  .plot-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .plot-name { font-weight: 600; font-size: 14px; }
+  .plot-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .plot-detail { margin-top: 12px; border-top: 0.5px solid var(--border); padding-top: 12px; display: none; }
+  .plot-card.open .plot-detail { display: block; }
+
+  /* PREVIEW BOX */
+  .preview-box { background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* SETUP BANNER */
+  .setup-banner { background: var(--amber-bg); color: var(--amber-text); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 14px; font-size: 13px; line-height: 1.7; }
+  .setup-banner strong { font-weight: 600; }
+
+  /* LOADING */
+  .loading-block { text-align: center; padding: 2.5rem; color: var(--text2); font-size: 13px; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DIVIDER */
+  .divider { height: 0.5px; background: var(--border); margin: 12px 0; }
+
+  /* MOBILE */
+  @media (max-width: 480px) {
+    .shell { padding: 0 10px 30px; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon"><i class="ti ti-bolt"></i></div>
+      <div>
+        <div class="logo-title" id="app-title">Учёт электроэнергии</div>
+        <div class="logo-sub">Дачное сообщество</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status">
+        <div class="dot loading" id="status-dot"></div>
+        <span id="status-text">Подключение...</span>
+      </div>
+      <button class="icon-btn" onclick="loadData()"><i class="ti ti-refresh"></i> Обновить</button>
+    </div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="showPage('overview')"><i class="ti ti-layout-dashboard"></i> Сводка</button>
+    <button class="nav-btn" onclick="showPage('plots')"><i class="ti ti-home"></i> Участки</button>
+    <button class="nav-btn" onclick="showPage('add')"><i class="ti ti-plus"></i> Запись</button>
+    <button class="nav-btn" onclick="showPage('settings')"><i class="ti ti-settings"></i> Настройки</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <div id="page-overview" class="page active">
+    <div class="metrics" id="ov-metrics">
+      <div class="metric"><div class="metric-label">Загрузка</div><div class="metric-value">...</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Долги / переплаты</div>
+        <div id="ov-debts"><div class="loading-block"><div class="spinner"></div><br>Загрузка...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Последние записи</div>
+        <div id="ov-recent"><div class="loading-block"><div class="spinner"></div><br>Загрузка...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLOTS -->
+  <div id="page-plots" class="page">
+    <div id="plots-list"><div class="loading-block"><div class="spinner"></div><br>Загрузка из Google Sheets...</div></div>
+  </div>
+
+  <!-- ADD -->
+  <div id="page-add" class="page">
+    <div class="card">
+      <div class="card-title">Новая запись показаний</div>
+      <div class="form-grid">
+        <div class="fg" style="grid-column: span 2">
+          <label>Участок</label>
+          <select id="a-plot" onchange="fillPrev()"></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="fg"><label>Дата</label><input type="date" id="a-date"></div>
+        <div class="fg"><label>Новое показание (кВт·ч)</label><input type="number" id="a-reading" placeholder="напр. 15700" min="0" oninput="calcCons()"></div>
+        <div class="fg"><label>Предыдущее показание</label><input type="number" id="a-prev" placeholder="авто" min="0" oninput="calcCons()"></div>
+        <div class="fg"><label>Расход (кВт·ч)</label><input type="number" id="a-cons" readonly placeholder="авто"></div>
+        <div class="fg"><label>Цена за кВт·ч (₸)</label><input type="number" id="a-price" value="36" step="0.01" min="0" oninput="calcCons()"></div>
+        <div class="fg"><label>Пополнение (₸)</label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcCons()"></div>
+        <div class="fg"><label>Баланс до (₸)</label><input type="number" id="a-balbefore" readonly placeholder="авто"></div>
+        <div class="fg"><label>Номер чека</label><input type="text" id="a-check" placeholder="№..."></div>
+      </div>
+      <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="a-note" placeholder="необязательно"></div>
+      <div class="preview-box" id="a-preview">Выберите участок и введите показание</div>
+      <button class="btn btn-primary" id="a-submit" onclick="submitRecord()">
+        <i class="ti ti-device-floppy"></i> Сохранить в Google Sheets
+      </button>
+      <div id="a-msg"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="page-settings" class="page">
+    <div class="card">
+      <div class="card-title">Подключение к Google Sheets</div>
+      <div class="fg" style="margin-bottom:10px">
+        <label>URL Apps Script</label>
+        <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <button class="btn btn-primary" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить и переподключить</button>
+      <div id="s-msg"></div>
+      <div class="divider"></div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">
+        <strong style="font-weight:600">Как получить URL:</strong><br>
+        Таблица → Расширения → Apps Script → Развернуть → Управление развёртываниями → скопировать URL
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Данные</div>
+      <button class="btn" onclick="loadData()"><i class="ti ti-refresh"></i> Перезагрузить из Sheets</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--red-text)">Сброс</div>
+      <button class="btn btn-danger" onclick="if(confirm('Удалить сохранённый URL?')){localStorage.clear();location.reload();}">
+        <i class="ti ti-trash"></i> Сбросить настройки
+      </button>
+    </div>
+  </div>
+
+</div><!-- .shell -->
+
+<script>
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbydw6iaeVUycWuLqan1BGIbd1lbY4OFisKamWWvMWIecWLNk7OKVoMn_4mq-4S4-ss0Pg/exec';
+
+let scriptUrl = localStorage.getItem('dacha_url') || DEFAULT_URL;
+let plots = [];
+let busy = false;
+
+/* ── utils ── */
+function fmt(n) { return Number(n).toLocaleString('ru-RU'); }
+function setStatus(s, t) {
+  document.getElementById('status-dot').className = 'dot ' + s;
+  document.getElementById('status-text').textContent = t;
+}
+function parseDate(str) {
+  if (!str) return new Date(0);
+  const m = str.toString().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+  if (m) { const y = m[3].length===2?'20'+m[3]:m[3]; return new Date(y, m[2]-1, m[1]); }
+  return new Date(str);
+}
+function shortName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.\s*\d+/i,'').trim(); }
+function lastRec(p) { return p.records?.length ? p.records[p.records.length-1] : null; }
+
+/* ── navigation ── */
+const PAGES = ['overview','plots','add','settings'];
+function showPage(id) {
+  PAGES.forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('active', p===id);
+  });
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active', PAGES[i]===id));
+  if (id==='overview') renderOverview();
+  if (id==='plots')    renderPlots();
+  if (id==='add')      renderAddForm();
+  if (id==='settings') document.getElementById('s-url').value = scriptUrl;
+}
+
+/* ── data load ── */
+async function loadData() {
+  if (busy) return;
+  busy = true;
+  setStatus('loading','Загрузка...');
+  try {
+    const r = await fetch(scriptUrl + '?action=getData');
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    plots = d.plots || [];
+    const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    setStatus('ok','Обновлено в '+t);
+    renderOverview();
+    if (document.getElementById('page-plots').classList.contains('active')) renderPlots();
+    if (document.getElementById('page-add').classList.contains('active')) renderAddForm();
+  } catch(e) {
+    setStatus('err','Ошибка: '+e.message);
+    if (!plots.length) showSetupBanner();
+  }
+  busy = false;
+}
+
+function showSetupBanner() {
+  const el = document.getElementById('ov-debts');
+  el.innerHTML = `<div class="setup-banner">
+    <strong>Не удалось подключиться к Google Sheets.</strong><br>
+    Перейдите в <b>Настройки</b> и проверьте URL Apps Script.<br>
+    Убедитесь что доступ установлен: <em>Все</em>.
+  </div>`;
+}
+
+/* ── overview ── */
+function renderOverview() {
+  if (!plots.length) return;
+  let debt=0, credit=0, debtN=0;
+  plots.forEach(p => {
+    const l = lastRec(p); if (!l) return;
+    const b = Number(l.balance)||0;
+    if (b < 0) { debt += Math.abs(b); debtN++; } else credit += b;
+  });
+
+  document.getElementById('ov-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Участков</div><div class="metric-value">${plots.length}</div></div>
+    <div class="metric"><div class="metric-label">Должников</div><div class="metric-value neg">${debtN}</div></div>
+    <div class="metric"><div class="metric-label">Общий долг</div><div class="metric-value">${fmt(Math.round(debt))}<span class="metric-unit">₸</span></div></div>
+    <div class="metric"><div class="metric-label">Переплат</div><div class="metric-value pos">${fmt(Math.round(credit))}<span class="metric-unit">₸</span></div></div>
+  `;
+
+  // debts table
+  const sorted = [...plots].sort((a,b)=>(Number(lastRec(a)?.balance)||0)-(Number(lastRec(b)?.balance)||0));
+  let dh = '<div class="tbl-wrap"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th></tr></thead><tbody>';
+  sorted.forEach(p => {
+    const l = lastRec(p); if (!l) return;
+    const b = Number(l.balance)||0;
+    dh += `<tr><td>${shortName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${b>=0?'<span class="badge badge-ok">ОК</span>':'<span class="badge badge-danger">Долг</span>'}</td></tr>`;
+  });
+  dh += '</tbody></table></div>';
+  document.getElementById('ov-debts').innerHTML = dh;
+
+  // recent
+  let recent = [];
+  plots.forEach(p => { const l=lastRec(p); if(l) recent.push({pname:p.name,...l}); });
+  recent.sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+  recent = recent.slice(0,8);
+  let rh = '<div class="tbl-wrap"><table><thead><tr><th>Участок</th><th>Дата</th><th class="tr">Расход</th><th class="tr">Сумма</th></tr></thead><tbody>';
+  recent.forEach(r => {
+    rh += `<tr><td class="tnowrap">${shortName(r.pname)}</td><td class="tnowrap">${r.date}</td><td class="tr">${r.consumption} кВт</td><td class="tr">${fmt(r.cost)} ₸</td></tr>`;
+  });
+  rh += '</tbody></table></div>';
+  document.getElementById('ov-recent').innerHTML = rh;
+}
+
+/* ── plots page ── */
+function renderPlots() {
+  const el = document.getElementById('plots-list');
+  if (!plots.length) { el.innerHTML='<div class="loading-block">Нет данных. Нажмите «Обновить».</div>'; return; }
+  el.innerHTML = plots.map((p,i) => {
+    const l = lastRec(p);
+    const b = l ? Number(l.balance) : null;
+    const bStr = b !== null ? fmt(Math.round(b))+' ₸' : '—';
+    const bCls = b===null?'':b>=0?'pos':'neg';
+    const badge = b===null?'':b>=0?'<span class="badge badge-ok">ОК</span>':'<span class="badge badge-danger">Долг</span>';
+    const recs = p.records?.length||0;
+    const lastDate = l?l.date:'нет записей';
+    return `
+    <div class="plot-card" id="pc-${i}" onclick="togglePlot(${i})">
+      <div class="plot-head">
+        <div>
+          <div class="plot-name">${p.name}</div>
+          <div class="plot-meta">${recs} записей · последняя: ${lastDate}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${badge}
+          <div class="${bCls}" style="font-size:15px;white-space:nowrap">${bStr}</div>
+        </div>
+      </div>
+      <div class="plot-detail" id="pd-${i}">
+        ${renderPlotTable(p)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePlot(i) {
+  const card = document.getElementById('pc-'+i);
+  card.classList.toggle('open');
+}
+
+function renderPlotTable(p) {
+  const recs = (p.records||[]).slice().reverse();
+  if (!recs.length) return '<p style="color:var(--text2);font-size:13px">Нет записей</p>';
+  let h = '<div class="tbl-wrap"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Пополнение</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>';
+  recs.forEach(r => {
+    const b = Number(r.balance);
+    h += `<tr>
+      <td class="tnowrap">${r.date}</td>
+      <td class="tr">${fmt(r.reading)}</td>
+      <td class="tr">${r.consumption}</td>
+      <td class="tr">${r.price}</td>
+      <td class="tr">${fmt(r.cost)}</td>
+      <td class="tr">${r.topup?fmt(r.topup):'—'}</td>
+      <td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td>
+      <td style="font-size:11px">${r.checkNum||''}</td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note||''}</td>
+    </tr>`;
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+/* ── add record ── */
+function renderAddForm() {
+  const sel = document.getElementById('a-plot');
+  sel.innerHTML = plots.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  document.getElementById('a-date').value = new Date().toISOString().split('T')[0];
+  fillPrev();
+}
+
+function fillPrev() {
+  const idx = parseInt(document.getElementById('a-plot')?.value);
+  if (isNaN(idx)||!plots[idx]) return;
+  const l = lastRec(plots[idx]);
+  document.getElementById('a-prev').value = l ? l.reading : '';
+  document.getElementById('a-balbefore').value = l ? Math.round(Number(l.balance)) : '';
+  calcCons();
+}
+
+function calcCons() {
+  const nr = parseFloat(document.getElementById('a-reading')?.value);
+  const pr = parseFloat(document.getElementById('a-prev')?.value);
+  const price = parseFloat(document.getElementById('a-price')?.value)||36;
+  const topup = parseFloat(document.getElementById('a-topup')?.value)||0;
+  const bb = parseFloat(document.getElementById('a-balbefore')?.value)||0;
+  if (!isNaN(nr)&&!isNaN(pr)) {
+    const cons = Math.max(0, nr-pr);
+    document.getElementById('a-cons').value = cons;
+    const cost = cons*price;
+    const nb = bb + topup - cost;
+    document.getElementById('a-preview').innerHTML =
+      `<strong>Расход:</strong> ${cons} кВт·ч &nbsp;·&nbsp; `+
+      `<strong>Стоимость:</strong> ${fmt(Math.round(cost))} ₸ &nbsp;·&nbsp; `+
+      `<strong>Новый баланс:</strong> <span class="${nb>=0?'pos':'neg'}">${fmt(Math.round(nb))} ₸</span>`;
+  } else {
+    document.getElementById('a-cons').value = '';
+    document.getElementById('a-preview').textContent = 'Введите показание для расчёта';
+  }
+}
+
+async function submitRecord() {
+  const idx = parseInt(document.getElementById('a-plot').value);
+  const plot = plots[idx];
+  if (!plot) return;
+  const reading = parseFloat(document.getElementById('a-reading').value);
+  const prevReading = parseFloat(document.getElementById('a-prev').value)||0;
+  const price = parseFloat(document.getElementById('a-price').value)||36;
+  const topup = parseFloat(document.getElementById('a-topup').value)||0;
+  const balanceBefore = parseFloat(document.getElementById('a-balbefore').value)||0;
+  const date = document.getElementById('a-date').value;
+
+  if (!reading||!date) {
+    document.getElementById('a-msg').innerHTML='<div class="msg msg-err">Укажите дату и новое показание</div>';
+    return;
+  }
+  if (reading < prevReading) {
+    document.getElementById('a-msg').innerHTML='<div class="msg msg-err">Новое показание меньше предыдущего</div>';
+    return;
+  }
+  const consumption = Math.max(0, reading - prevReading);
+  const dateStr = date.split('-').reverse().join('.');
+  const body = {
+    action:'addRecord', plotName:plot.name,
+    date:dateStr, reading, prevReading, consumption, price,
+    topup, balanceBefore,
+    checkNum: document.getElementById('a-check').value,
+    note: document.getElementById('a-note').value
+  };
+  const btn = document.getElementById('a-submit');
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader ti-spin"></i> Сохраняем...';
+  document.getElementById('a-msg').innerHTML = '';
+  try {
+    const r = await fetch(scriptUrl, { method:'POST', body:JSON.stringify(body) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    const nb = d.newBalance;
+    document.getElementById('a-msg').innerHTML =
+      `<div class="msg msg-ok">Записано! Новый баланс: <strong>${fmt(Math.round(nb))} ₸</strong></div>`;
+    ['a-reading','a-topup','a-check','a-note'].forEach(id=>document.getElementById(id).value='');
+    await loadData();
+    fillPrev();
+  } catch(e) {
+    document.getElementById('a-msg').innerHTML=`<div class="msg msg-err">Ошибка: ${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-device-floppy"></i> Сохранить в Google Sheets';
+}
+
+/* ── settings ── */
+function saveUrl() {
+  const url = document.getElementById('s-url').value.trim();
+  if (!url) return;
+  scriptUrl = url;
+  localStorage.setItem('dacha_url', url);
+  document.getElementById('s-msg').innerHTML='<div class="msg msg-ok">Сохранено. Подключаемся...</div>';
+  setTimeout(()=>{ document.getElementById('s-msg').innerHTML=''; }, 3000);
+  loadData();
+}
+
+/* ── init ── */
+loadData();
+</script>
+</body>
+</html>
