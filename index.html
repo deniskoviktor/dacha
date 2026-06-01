@@ -140,17 +140,17 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
     </div>
     <div class="fgrid">
       <div class="fg"><label>Дата</label><input type="date" id="a-date"></div>
-      <div class="fg"><label>Новое показание (кВт·ч)</label><input type="number" id="a-read" placeholder="напр. 15700" min="0" oninput="calcAdd()"></div>
+      <div class="fg"><label>Новое показание (кВт·ч) <span style="color:var(--red)">*</span></label><input type="number" id="a-read" placeholder="напр. 15700" min="0" oninput="calcAdd()"></div>
       <div class="fg"><label>Предыдущее показание</label><input type="number" id="a-prev" placeholder="авто" min="0" oninput="calcAdd()"></div>
       <div class="fg"><label>Расход (кВт·ч)</label><input type="number" id="a-cons" readonly placeholder="авто"></div>
       <div class="fg"><label>Цена за кВт·ч (₸)</label><input type="number" id="a-price" step="0.01" oninput="calcAdd()"></div>
-      <div class="fg"><label>Пополнение (₸)</label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcAdd()"></div>
+      <div class="fg"><label>Пополнение (₸) <span style="color:var(--red)">*</span></label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcAdd()"></div>
       <div class="fg"><label>Баланс до (₸)</label><input type="number" id="a-bb" readonly placeholder="авто"></div>
       <div class="fg"><label>Номер чека</label><input type="text" id="a-chk" placeholder="№..."></div>
     </div>
     <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="a-note" placeholder="необязательно"></div>
     <div class="prev-box" id="a-preview">Выберите участок и введите показание</div>
-    <button class="btn btn-p" id="a-btn" onclick="submitAdd()"><i class="ti ti-device-floppy"></i> Сохранить в Google Sheets</button>
+    <button class="btn btn-p" id="a-btn" onclick="submitAdd()"><i class="ti ti-device-floppy"></i> Сохранить</button>
     <div id="a-msg"></div>
   </div>
 </div>
@@ -238,8 +238,9 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 
 </div><!-- .shell -->
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBYRqeHlYOqR1iYxL1QpVpuqehvez0qFj0ckCLOG-8Q7us6ie6o2fzcMmVcmozgil4Yw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsddNvnqSVHEj6WJGSmdIniX_85Q8sNbQ2Wp0gDwfSHdI_PDbZObWskClQnjawIntbUw/exec';
 const ADMIN_PWD  = '4588';
+const APP_VER    = '1'; // ← увеличьте на 1 при каждом обновлении Apps Script
 
 let url     = localStorage.getItem('dacha_url') || SCRIPT_URL;
 let plots   = [], busy = false, tariff = 36;
@@ -307,7 +308,7 @@ async function doLogin() {
     return;
   }
   try {
-    const r = await fetch(url+'?action=checkPassword&password='+encodeURIComponent(pin));
+    const r = await fetch(url+'?action=checkPassword&v='+APP_VER+'&password='+encodeURIComponent(pin));
     const d = await r.json();
     if (d.ok && d.role==='owner') {
       session = {role:'owner', plotName:d.plotName};
@@ -339,12 +340,12 @@ async function load() {
   if (busy) return; busy=true;
   setS('spin','Загрузка...');
   try {
-    const r = await fetch(url+'?action=getData');
+    const r = await fetch(url+'?action=getData&v='+APP_VER);
     const d = await r.json();
     if (d.error) throw new Error(d.error);
     plots = normPlots((d.plots||[]).filter(p=>p.name&&!p.name.startsWith('Дата')));
     // Загружаем тариф
-    try { const tr=await fetch(url+'?action=getTariff'); const td=await tr.json(); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
+    try { const tr=await fetch(url+'?action=getTariff&v='+APP_VER); const td=await tr.json(); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
     setS('ok','Обновлено в '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
     renderOv();
     if(document.getElementById('pg-pl').classList.contains('active'))  renderPl();
@@ -418,6 +419,9 @@ function renderAdd() {
   document.getElementById('a-plot').innerHTML=avail.map(p=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
   document.getElementById('a-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('a-price').value=tariff;
+  // Тариф и предыдущее показание — только для админа
+  document.getElementById('a-price').readOnly = !isAdmin();
+  document.getElementById('a-prev').readOnly  = !isAdmin();
   fillPrev();
 }
 function goAdd(idx){if(!canEdit(plots[idx].name)){openLogin();return;}go('add');setTimeout(()=>{document.getElementById('a-plot').value=idx;fillPrev();},150);}
@@ -451,14 +455,21 @@ async function submitAdd(){
   const bb=parseFloat(document.getElementById('a-bb').value)||0;
   const date=document.getElementById('a-date').value;
   const msgEl=document.getElementById('a-msg');
-  if(!reading||!date){msgEl.innerHTML='<div class="msg merr">Укажите дату и показание</div>';return;}
+  if(!reading){msgEl.innerHTML='<div class="msg merr">Укажите текущие показания счётчика</div>';return;}
+  if(!topup||topup<=0){msgEl.innerHTML='<div class="msg merr">Укажите сумму к оплате</div>';return;}
+  if(!date){msgEl.innerHTML='<div class="msg merr">Укажите дату</div>';return;}
   if(reading<prevR){msgEl.innerHTML='<div class="msg merr">Новое показание меньше предыдущего</div>';return;}
+  // Проверка: нет ли уже записи за сегодня
+  const todayStr = new Date().toLocaleDateString('ru-RU').split('.').map((v,i)=>i<2?v.padStart(2,'0'):v).join('.');
+  const plotRecs = recs(plots[idx]);
+  const alreadyToday = plotRecs.some(r => r.date === todayStr);
+  if(alreadyToday){msgEl.innerHTML='<div class="msg merr">Запись уже есть за сегодня</div>';return;}
   const cons=Math.max(0,reading-prevR);
   const body={action:'addRecord',plotName:plot.name,date:date.split('-').reverse().join('.'),reading,prevReading:prevR,consumption:cons,price,topup,balanceBefore:bb,checkNum:document.getElementById('a-chk').value,note:document.getElementById('a-note').value};
   const btn=document.getElementById('a-btn');
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
   try{
-    const r=await fetch(url,{method:'POST',body:JSON.stringify(body)});
+    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify(body)});
     const d=await r.json();if(d.error)throw new Error(d.error);
     msgEl.innerHTML=`<div class="msg mok">Записано! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
     ['a-read','a-topup','a-chk','a-note'].forEach(id=>document.getElementById(id).value='');
@@ -508,7 +519,7 @@ async function submitPay(){
   const btn=document.getElementById('pay-btn');
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
   try{
-    const r=await fetch(url,{method:'POST',body:JSON.stringify(body)});
+    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify(body)});
     const d=await r.json();if(d.error)throw new Error(d.error);
     msgEl.innerHTML=`<div class="msg mok">Оплата внесена! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
     ['pay-amount','pay-chk','pay-note'].forEach(id=>document.getElementById(id).value='');
@@ -547,7 +558,7 @@ async function savePwd(){
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';
   try{
     const pwdMap=pendingPwd.map(p=>({plotName:p.name,password:p.newPwd}));
-    const r=await fetch(url,{method:'POST',body:JSON.stringify({action:'savePasswords',passwords:pwdMap})});
+    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify({action:'savePasswords',passwords:pwdMap})});
     const d=await r.json();if(d.error)throw new Error(d.error);
     document.getElementById('pwd-msg').innerHTML='<div class="msg mok">Пароли сохранены в таблицу!</div>';
     setTimeout(()=>document.getElementById('pwd-msg').innerHTML='',3000);
@@ -563,7 +574,7 @@ async function saveTariff(){
   const t=parseFloat(document.getElementById('cfg-tariff').value);
   if(!t||t<=0){document.getElementById('tariff-msg').innerHTML='<div class="msg merr">Введите корректный тариф</div>';return;}
   try{
-    const r=await fetch(url,{method:'POST',body:JSON.stringify({action:'setTariff',tariff:t})});
+    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify({action:'setTariff',tariff:t})});
     const d=await r.json();if(d.error)throw new Error(d.error);
     tariff=t;
     document.getElementById('tariff-msg').innerHTML=`<div class="msg mok">Тариф сохранён: ${t} ₸/кВт·ч</div>`;
