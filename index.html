@@ -225,7 +225,7 @@ const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxEWjr8KRHtYOA5DqVO
 const ADMIN_PWD = '0000'; // ← замените на свой пароль
 
 let scriptUrl = localStorage.getItem('dacha_url') || DEFAULT_URL;
-let plots = [], busy = false;
+let plots = [], busy = false, tariff = 36;
 // session: {role:'admin'|'owner', plotName?:string}
 let session = JSON.parse(sessionStorage.getItem('dacha_session')||'null');
 let pendingPasswords = null; // новые пароли до сохранения
@@ -438,6 +438,7 @@ function renderAddPage() {
   const available = isAdmin() ? plots : plots.filter(p=>p.name===session.plotName);
   sel.innerHTML=available.map((p,i)=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
   document.getElementById('a-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('a-price').value=tariff;
   fillPrev();
 }
 function prefillAdd(idx) {
