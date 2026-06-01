@@ -283,15 +283,44 @@ function setStatus(s, t) {
   document.getElementById('status-dot').className = 'dot ' + s;
   document.getElementById('status-text').textContent = t;
 }
+// Нормализует любую дату к формату дд.мм.гггг
+function normalizeDate(str) {
+  if (!str) return '';
+  str = str.toString().trim();
+  // уже нормальный формат дд.мм.гггг
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) return str;
+  // дд.мм.гг -> дд.мм.20гг
+  let m = str.match(/^(\d{1,2})[\.](\d{1,2})[\.](\d{2})$/);
+  if (m) return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.20'+m[3];
+  // дд.мм,гг -> дд.мм.20гг (запятая вместо точки)
+  m = str.match(/^(\d{1,2})[\.,](\d{1,2})[\.,](\d{2,4})$/);
+  if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
+  // слитные форматы: 30012023, 21072025 (8 цифр)
+  m = str.match(/^(\d{2})(\d{2})(\d{4})$/);
+  if (m) return m[1]+'.'+m[2]+'.'+m[3];
+  // слитные форматы с точкой без года: 21.072025
+  m = str.match(/^(\d{1,2})[\.](\d{2})(\d{4})$/);
+  if (m) return m[1].padStart(2,'0')+'.'+m[2]+'.'+m[3];
+  // дд/мм/гггг
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
+  return str; // вернуть как есть если не распознали
+}
 function parseDate(str) {
-  if (!str) return new Date(0);
-  const m = str.toString().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
-  if (m) { const y = m[3].length===2?'20'+m[3]:m[3]; return new Date(y, m[2]-1, m[1]); }
-  return new Date(str);
+  const n = normalizeDate(str);
+  const m = n.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (m) return new Date(m[3], m[2]-1, m[1]);
+  return new Date(0);
 }
 function shortName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.?\s*\d+/i,'').trim(); }
-function realRecs(p) { return (p.records||[]).filter(r=>r.date); }
+function isRealRec(r){return !!(r.date && (r.reading>0||r.consumption>0||r.topup>0||r.cost>0));}
+function realRecs(p) { return (p.records||[]).filter(isRealRec); }
 function lastRec(p) { const rr=realRecs(p); return rr.length ? rr[rr.length-1] : null; }
+// Нормализуем даты во всех записях после загрузки
+function normalizePlots(ps) {
+  ps.forEach(p => (p.records||[]).forEach(r => { r.date = normalizeDate(r.date); }));
+  return ps;
+}
 
 /* ── navigation ── */
 const PAGES = ['overview','plots','add','settings'];
@@ -315,7 +344,7 @@ async function loadData() {
     const r = await fetch(scriptUrl + '?action=getData');
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    plots = (d.plots || []).filter(p => p.name && !p.name.startsWith('Дата'));
+    plots = normalizePlots((d.plots || []).filter(p => p.name && !p.name.startsWith('Дата')));
     const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     setStatus('ok','Обновлено в '+t);
     renderOverview();
