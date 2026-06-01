@@ -100,6 +100,7 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
     <button class="ibtn" id="btn-login" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
     <button class="ibtn" id="btn-logout" onclick="logout()" style="display:none"><i class="ti ti-logout"></i> Выйти</button>
     <button class="ibtn" onclick="load()"><i class="ti ti-refresh"></i></button>
+    <a href="instrukciya_polzovatelya.pdf" download class="ibtn" title="Скачать инструкцию"><i class="ti ti-file-description"></i> Инструкция</a>
   </div>
 </header>
 
@@ -240,7 +241,7 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsddNvnqSVHEj6WJGSmdIniX_85Q8sNbQ2Wp0gDwfSHdI_PDbZObWskClQnjawIntbUw/exec';
 const ADMIN_PWD  = '4588';
-const APP_VER    = '2'; // ← увеличьте на 1 при каждом обновлении Apps Script
+const APP_VER    = 'ғ'; // ← увеличьте на 1 при каждом обновлении Apps Script
 
 let url     = localStorage.getItem('dacha_url') || SCRIPT_URL;
 let plots   = [], busy = false, tariff = 36;
