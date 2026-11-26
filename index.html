@@ -384,7 +384,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 18:30</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 19:30</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -543,7 +543,40 @@ async function load(quiet) {
 }
 
 /* ─── сводка ─── */
+/* ─── оценка для тех, кто давно не передаёт показания ───
+ * Средний расход участка в месяц — по его показаниям за последние 12 месяцев до последней записи
+ * (нет истории — медиана по посёлку). За время без показаний (дни / 30,4) начисляем средний расход × тариф
+ * и вычитаем из баланса: так переплата не завышена, а долг виден заранее. */
+const MS_MONTH = 864e5 * 30.4;
+function avgKwh(p) {
+  const rs = recs(p).map(r => ({ d: pDate(r.date).getTime(), kwh: Number(r.consumption) || 0 })).filter(x => x.d > 0);
+  if (rs.length < 2) return null;
+  const last = rs[rs.length - 1].d, from = Math.max(rs[0].d, last - 365 * 864e5);
+  const months = (last - from) / MS_MONTH;
+  const kwh = rs.filter(x => x.d > from && x.d <= last).reduce((a, x) => a + x.kwh, 0);
+  return months >= 1 && kwh > 0 ? kwh / months : null;
+}
+let estCache = null;
+function estimates() {
+  if (estCache) return estCache;
+  const own = new Map(plots.map(p => [p.id, avgKwh(p)]));
+  const vals = [...own.values()].filter(v => v > 0).sort((a, b) => a - b);
+  const median = vals.length ? vals[Math.floor(vals.length / 2)] : 0;
+  estCache = new Map(plots.map(p => {
+    const l = lastR(p), bal = l ? Number(l.balance) || 0 : 0;
+    if (!l || !stale(p)) return [p.id, { bal, est: bal, stale: false }];
+    const months = (Date.now() - pDate(l.date)) / MS_MONTH, avg = own.get(p.id) || median, src = own.get(p.id) ? 'свой' : 'по посёлку';
+    const kwh = Math.round(avg * months), cost = Math.round(kwh * tariff);
+    return [p.id, { bal, est: bal - cost, stale: true, months, avg, kwh, cost, src }];
+  }));
+  return estCache;
+}
+const estOf = p => estimates().get(p.id) || { bal: 0, est: 0, stale: false };
+const monthsStr = m => { const n = Math.round(m); return n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'месяц' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'месяца' : 'месяцев'); };
+const estNote = e => `без показаний ${monthsStr(e.months)} · ≈ ${fmt(e.avg < 10 ? Math.round(e.avg * 10) / 10 : Math.round(e.avg))} кВт·ч/мес${e.src === 'свой' ? '' : ' (средний по посёлку)'} → ≈ ${money(e.cost)}`;
+
 function renderOv() {
+  estCache = null;
   // мой участок (владелец)
   const mine = isOwner() ? byId(session.plotId) : null;
   if (mine) {
@@ -551,25 +584,28 @@ function renderOv() {
     $('ov-mine').innerHTML = `<div class="card"><div class="mine">
       <div><div class="ml">Мой участок · ${plotLabel(mine)}</div>
         <div class="bal ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div>
-        <div class="meta">${l ? `Последние показания ${esc(l.date)}: ${fmt(l.reading)} кВт·ч` : 'Записей пока нет'}${stale(mine) ? ' · <span class="neg">давно не было показаний</span>' : ''}</div></div>
+        <div class="meta">${l ? `Последние показания ${esc(l.date)}: ${fmt(l.reading)} кВт·ч` : 'Записей пока нет'}${stale(mine) ? ' · <span class="neg">давно не было показаний</span>' : ''}</div>
+        ${estOf(mine).stale ? `<div class="meta">С учётом ${estNote(estOf(mine))}: <b class="${estOf(mine).est >= 0 ? 'pos' : 'neg'}">≈ ${money(estOf(mine).est)}</b></div>` : ''}</div>
       <div class="acts"><button class="btn btn-p" onclick="go('add',${mine.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn" onclick="go('pay',${mine.id})"><i class="ti ti-cash"></i> Пополнить</button></div>
     </div></div>`;
   } else $('ov-mine').innerHTML = '';
   const live = plots.filter(act);
   if (!live.length) { $('ov-m').innerHTML = ''; $('ov-d').innerHTML = $('ov-r').innerHTML = '<div class="empty">Нет данных</div>'; return; }
   let debt = 0, cred = 0, dn = 0, overdue = 0;
-  live.forEach(p => { const l = lastR(p); if (!l) return; const b = Number(l.balance) || 0; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
+  let estimated = 0;
+  live.forEach(p => { const l = lastR(p); if (!l) return; const e = estOf(p), b = e.est; if (e.stale) estimated += e.cost; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
   $('ov-m').innerHTML = `
     <div class="met"><div class="ml">Участков</div><div class="mv">${live.length}${plots.length > live.length ? `<span class="mu">+${plots.length - live.length} выкл.</span>` : ''}</div></div>
     <div class="met"><div class="ml">Должников</div><div class="mv ${dn ? 'neg' : ''}">${dn}</div></div>
-    <div class="met"><div class="ml">Общий долг</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
-    <div class="met"><div class="ml">Переплаты</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
+    <div class="met"><div class="ml">Общий долг${estimated ? ' (с оценкой)' : ''}</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
+    <div class="met"><div class="ml">Переплаты${estimated ? ' (с оценкой)' : ''}</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
+    ${estimated ? `<div class="met" title="Средний расход × месяцы без показаний × тариф — уже учтено в долге и переплатах"><div class="ml">Не передано (оценка)</div><div class="mv">≈ ${fmt(estimated)}<span class="mu">₸</span></div></div>` : ''}
     <div class="met ${overdue ? 'warn' : ''}"><div class="ml">Нет показаний более 2 мес.</div><div class="mv ${overdue ? 'neg' : ''}">${overdue}</div></div>`;
-  const sorted = live.filter(lastR).sort((a, b) => Number(lastR(a).balance) - Number(lastR(b).balance));
-  $('ov-d').innerHTML = sorted.map(p => {
-    const b = Number(lastR(p).balance) || 0;
-    const tags = (b < 0 ? '<span class="badge berr">долг</span>' : '<span class="badge bok">ОК</span>') + (stale(p) ? ' <span class="badge bwarn" title="Более 2 месяцев без показаний">нет показаний</span>' : '');
-    return `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${tags}</div></div><div class="amt ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div>`;
+  const sorted = live.filter(lastR).sort((a, b) => estOf(a).est - estOf(b).est);
+  $('ov-d').innerHTML = (sorted.some(p => estOf(p).stale) ? '<div class="sm" style="font-size:12px;color:var(--text2);margin-bottom:4px">≈ — оценка: кто давно не передаёт показания, тому за это время начислен его средний расход.</div>' : '') + sorted.map(p => {
+    const e = estOf(p), b = e.est;
+    const tags = (b < 0 ? '<span class="badge berr">долг</span>' : '<span class="badge bok">ОК</span>') + (e.stale ? ' <span class="badge bwarn" title="Более 2 месяцев без показаний">нет показаний</span>' : '');
+    return `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${tags}${e.stale ? ` · по показаниям ${money(e.bal)}, ${estNote(e)}` : ''}</div></div><div class="amt ${b >= 0 ? 'pos' : 'neg'}">${e.stale ? '≈ ' : ''}${money(b)}</div></div>`;
   }).join('') || '<div class="empty">Нет записей</div>';
   const rec = live.map(p => ({ p, l: lastR(p) })).filter(x => x.l).sort((a, b) => pDate(b.l.date) - pDate(a.l.date)).slice(0, 8);
   $('ov-r').innerHTML = rec.map(({ p, l }) => `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${esc(l.date)} · ${fmt(l.consumption)} кВт·ч</div></div><div class="amt">${money(l.cost)}</div></div>`).join('') || '<div class="empty">Нет записей</div>';
@@ -681,7 +717,8 @@ function renderPl() {
   if (!session) { el.innerHTML = '<div class="empty">Войдите, чтобы увидеть свой участок</div>'; return; }
   if (!avail.length) { el.innerHTML = `<div class="empty">${isOwner() ? 'Ваш участок отключён администратором' : 'Нет участков'}</div>`; return; }
   if (!avail.some(p => p.id === plState.id)) plState.id = avail[0].id;
-  const p = byId(plState.id), l = lastR(p), b = l ? Number(l.balance) : 0;
+  estCache = null;
+  const p = byId(plState.id), l = lastR(p), b = l ? Number(l.balance) : 0, e = estOf(p);
   const all = monthly(p), months = plState.range ? all.slice(-plState.range) : all;
   const sum = k => months.reduce((a, m) => a + m[k], 0);
   const kwh = sum('kwh'), withKwh = months.filter(m => m.kwh > 0).length;
@@ -694,7 +731,7 @@ function renderPl() {
     <div style="min-width:0"><div class="pname">${plotLabel(p)}${act(p) ? '' : ' <span class="badge berr">отключён</span>'}</div>
       <div class="pmeta">${l ? 'Последнее показание ' + fmt(l.reading) + ' кВт·ч от ' + esc(l.date) : 'Записей пока нет'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
     <div style="text-align:right"><div class="pmeta" style="margin:0">Баланс</div><div class="pl-bal ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div>
-  </div>${acts}</div>
+  </div>${e.stale ? `<div class="msg" style="background:var(--amber-bg);color:var(--amber)">С учётом ${estNote(e)}, баланс ≈ <b>${money(e.est)}</b>. Передайте показания — посчитаем точно.</div>` : ''}${acts}</div>
   ${all.length ? `${seg}
   <div class="kpis"><div class="kpi"><div class="l">Расход</div><div class="v">${fmt(kwh)} кВт·ч</div></div><div class="kpi"><div class="l">Начислено</div><div class="v">${money(sum('cost'))}</div></div><div class="kpi"><div class="l">Оплачено</div><div class="v">${money(sum('pay'))}</div></div></div>
   <div class="pmeta" style="margin:2px 0 12px">${withKwh ? 'В среднем ' + fmt(Math.round(kwh / withKwh)) + ' кВт·ч в месяц с показаниями' : ''}</div>

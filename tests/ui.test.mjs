@@ -91,6 +91,10 @@ await run('Компьютер, администратор (9999):', { viewport: 
   await p.fill('#pin', '9999'); await p.press('#pin', 'Enter');
   await p.waitForSelector('#nav-pwd:visible');
   ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position !== 'fixed'), 'вкладки сверху');
+  await p.screenshot({ path: `${OUT}/9-сводка-оценка.png`, fullPage: true });
+  const est = await p.evaluate(() => plots.filter(act).map(p => { const e = estOf(p); return e.stale ? `${plotNo(p)}: ${Math.round(e.bal)} → ${e.est} (${e.months.toFixed(1)} мес × ${Math.round(e.avg)} кВт·ч, ${e.src})` : null; }).filter(Boolean));
+  console.log('  оценка:', est.join(' | '));
+  ok(est.length > 0 && (await p.locator('#ov-d').innerText()).includes('без показаний'), 'сводка: оценка для тех, кто не передаёт показания');
   await p.click('#nav-pwd');
   ok(await p.locator('.pwd-row').count() === 13, 'коды всех 13 участков');
   await p.click('nav.tabs [data-p=add]');
