@@ -393,7 +393,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 21:20</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 21:40</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -501,6 +501,7 @@ async function doLogin() {
       store.set(JSON.stringify(session));
       locked = false; document.body.classList.remove('locked'); closeLogin(); updateUI();
       toast(isAdmin() ? 'Вы вошли как администратор' : 'Здравствуйте! Участок: ' + shortName(d.plotName));
+      if (isOwner()) pushAuto(true);
       await load(true);
       go('ov');
     } else $('login-err').innerHTML = `<div class="msg merr">${esc(d.error || 'Неверный код')}</div>`;
@@ -575,24 +576,33 @@ async function pushBox() {
   else html = '<button class="btn btn-sm" onclick="pushOn()"><i class="ti ti-bell"></i> Включить уведомления о долге</button>';
   document.querySelectorAll('.push-box').forEach(b => { b.innerHTML = html; b.style.marginTop = html ? '10px' : ''; });
 }
-async function pushOn() {
+// включаем сами: сразу после входа владельца (браузер один раз спросит разрешение — это обязательное правило браузеров),
+// а если разрешение уже есть — молча при каждом открытии. Кто сам нажал «Выключить» — того не трогаем.
+const optOut = { get: () => { try { return localStorage.getItem('dacha_push_off') === '1'; } catch { return false; } }, set: v => { try { v ? localStorage.setItem('dacha_push_off', '1') : localStorage.removeItem('dacha_push_off'); } catch {} } };
+let pushAutoDone = false;
+async function pushAuto(fromLogin) {
+  if (!isOwner() || !pushSupported() || optOut.get() || (pushAutoDone && !fromLogin)) return;
+  pushAutoDone = true;
+  if (Notification.permission === 'granted' || (Notification.permission === 'default' && fromLogin)) await pushOn(true);
+}
+async function pushOn(auto) {
+  if (auto !== true) optOut.set(false);
   try {
-    if (await Notification.requestPermission() !== 'granted') { toast('Разрешите уведомления для этого сайта', true); return pushBox(); }
+    if (await Notification.requestPermission() !== 'granted') { if (auto !== true) toast('Разрешите уведомления для этого сайта', true); return pushBox(); }
     const reg = await swP || await navigator.serviceWorker.register('/sw.js'); await navigator.serviceWorker.ready;
     const { key } = await apiGet('pushKey');
     const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64key(key) });
     const d = await apiPost({ action: 'pushSubscribe', sub: sub.toJSON() });
     if (d.error) throw new Error(d.error);
-    toast('Уведомления включены');
-    apiPost({ action: 'pushTest', endpoint: sub.endpoint }).catch(() => {});
-  } catch (e) { toast('Не удалось включить уведомления: ' + e.message, true); }
+    if (auto !== true) { toast('Уведомления включены'); apiPost({ action: 'pushTest', endpoint: sub.endpoint }).catch(() => {}); }
+  } catch (e) { if (auto !== true) toast('Не удалось включить уведомления: ' + e.message, true); }
   pushBox();
 }
 async function pushTest() { const sub = await currentSub(); if (!sub) return pushBox(); const d = await apiPost({ action: 'pushTest', endpoint: sub.endpoint }); toast(d.ok ? 'Отправлено — проверьте уведомления' : 'Не получилось — выключите и включите снова', !d.ok); }
 async function pushOff(quiet) {
   const sub = await currentSub(); if (!sub) return;
   try { await apiPost({ action: 'pushUnsubscribe', endpoint: sub.endpoint }); await sub.unsubscribe(); } catch {}
-  if (!quiet) { toast('Уведомления выключены'); pushBox(); }
+  if (!quiet) { optOut.set(true); toast('Уведомления выключены'); pushBox(); }
 }
 async function loadPushStats() {
   if (!isAdmin()) return;
@@ -1052,7 +1062,7 @@ function saveUrl() {
 
 /* ─── старт ─── */
 updateUI();
-load().then(() => { const pg = new URLSearchParams(location.search).get('p'); if (pg && session && PAGES.includes(pg)) go(pg); });
+load().then(() => { pushAuto(false); const pg = new URLSearchParams(location.search).get('p'); if (pg && session && PAGES.includes(pg)) go(pg); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLogin(); closePlot(); } });
 </script>
 </body>
