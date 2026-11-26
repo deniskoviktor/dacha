@@ -1,0 +1,56 @@
+const B = process.argv[2] || 'http://127.0.0.1:8097/api';
+let pass = 0, fail = 0;
+const ok = (c, t, extra = '') => { if (c) { pass++; console.log('  ✓', t); } else { fail++; console.log('  ✗', t, extra); } };
+const get = async (q) => (await fetch(B + '?' + new URLSearchParams(q))).json();
+const post = async (b) => (await fetch(B, { method: 'POST', body: JSON.stringify(b) })).json();
+const today = new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10).split('-').reverse().join('.');
+const future = new Date(Date.now() + 5 * 3600e3 + 3 * 86400e3).toISOString().slice(0, 10).split('-').reverse().join('.');
+
+console.log('Без входа:');
+const anon = await get({ action: 'getData' });
+ok(anon.plots.length === 13, 'сводка: 13 участков');
+ok(anon.plots.every(p => !/\+?\d{10,}/.test(p.name.replace(/\s/g, ''))), 'в названиях нет телефонов', anon.plots.map(p => p.name).join('; '));
+ok(anon.plots.every(p => !('storedPwd' in p)), 'коды не отдаются');
+ok(anon.plots.every(p => Number.isInteger(p.id)), 'у участков есть id');
+ok((await post({ action: 'addRecord', plotId: anon.plots[0].id, reading: 1, topup: 0, date: today })).error === 'Требуется вход', 'запись без входа — отказ');
+
+console.log('Владелец (код 1111):');
+const lo = await post({ action: 'checkPassword', password: '1111' });
+ok(lo.ok && lo.role === 'owner' && lo.plotId, 'вход владельца, plotId=' + lo.plotId);
+const T = lo.token, my = lo.plotId;
+const other = anon.plots.find(p => p.id !== my).id;
+const mine0 = anon.plots.find(p => p.id === my); const last0 = mine0.records.filter(r => r.reading > 0).pop();
+const r1 = await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 10, topup: 0, date: today, note: '<img src=x onerror=alert(1)>' });
+ok(r1.ok, 'показания с оплатой 0 — принято', JSON.stringify(r1));
+ok(r1.consumption === 10 && r1.cost === 360 && Math.abs(r1.newBalance - (Number(last0.balance) - 360)) < 0.01, `расход 10, стоимость 360, баланс ${r1.newBalance}`);
+ok((await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 20, topup: 0, date: today })).error?.includes('уже есть'), 'вторая запись за ту же дату — отказ');
+ok((await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 30, topup: -5, date: '01.11.2026' })).error?.includes('отрицат'), 'отрицательная оплата — отказ');
+ok((await post({ action: 'addRecord', token: T, plotId: my, reading: 1, topup: 0, date: '02.11.2026' })).error?.includes('меньше'), 'показание меньше предыдущего — отказ');
+ok((await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 40, topup: 0, date: future })).error?.includes('будущ'), 'дата в будущем — отказ');
+ok((await post({ action: 'addRecord', token: T, plotId: other, reading: 999999, topup: 0, date: '03.11.2026' })).error === 'Нет доступа к этому участку', 'чужой участок — отказ');
+ok((await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 50, topup: 0, date: '04.11.2026' })).error?.includes('раньше последней'), 'дата раньше последней записи — отказ');
+ok((await post({ action: 'updatePayment', token: T, plotId: my, topup: 0 })).error?.includes('больше 0'), 'пополнение на 0 — отказ');
+ok((await post({ action: 'updatePayment', token: T, plotId: my, topup: -100 })).error?.includes('больше 0'), 'пополнение отрицательное — отказ');
+const d1 = await get({ action: 'getData', token: T }); const mineL = d1.plots.find(p => p.id === my).records.pop();
+const p1 = await post({ action: 'updatePayment', token: T, plotId: my, topup: 500, checkNum: 'Ч-1' });
+ok(p1.ok && Math.abs(p1.newBalance - (Number(mineL.balance) + 500)) < 0.01, `пополнение 500 — баланс ${mineL.balance} → ${p1.newBalance}`);
+ok((await post({ action: 'updatePayment', token: T, plotId: other, topup: 100 })).error === 'Нет доступа к этому участку', 'пополнение чужого участка — отказ');
+ok((await post({ action: 'savePasswords', token: T, passwords: [] })).error?.includes('администратора'), 'владелец не может менять коды');
+
+console.log('Администратор (9999):');
+const la = await post({ action: 'checkPassword', password: '9999' });
+ok(la.ok && la.role === 'admin', 'вход администратора');
+const adm = await get({ action: 'getData', token: la.token });
+ok(adm.plots.some(p => /\+7\d{10}/.test(p.name)), 'администратор видит полные названия с телефонами');
+ok(adm.plots.every(p => 'storedPwd' in p), 'администратор видит коды');
+ok((await post({ action: 'addRecord', token: la.token, plotId: other, reading: Number(adm.plots.find(p => p.id === other).records.filter(r => r.reading > 0).pop().reading) + 1, topup: 0, date: today })).ok, 'администратор вносит по любому участку');
+ok((await post({ action: 'setTariff', token: la.token, tariff: 0 })).error, 'тариф 0 — отказ');
+
+console.log('Совместимость со старой страницей (по названию):');
+const legacy = await post({ action: 'updatePayment', token: la.token, plotName: adm.plots.find(p => p.id === other).name, topup: 1 });
+ok(legacy.ok, 'запрос по plotName работает');
+console.log('Защита от подбора кода:');
+let last; for (let i = 0; i < 11; i++) last = await post({ action: 'checkPassword', password: '00' + i });
+ok(String(last.error || '').includes('Слишком много'), 'после 10 неверных кодов — блокировка');
+console.log(`\nИТОГ: ${pass} пройдено, ${fail} не пройдено`);
+process.exit(fail ? 1 : 0);
