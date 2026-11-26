@@ -384,7 +384,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 19:30</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 19:45</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -522,8 +522,14 @@ function render(id = current, plotId) {
 }
 
 /* ─── загрузка ─── */
-async function load(quiet) {
-  if (busy) return; busy = true;
+// загрузка, пока идёт прошлая, не теряется: повторяем после неё (иначе после сохранения видны старые данные)
+let loadP = null, loadAgain = false;
+function load(quiet) {
+  if (loadP) { loadAgain = true; return loadP; }
+  loadP = (async () => { try { do { loadAgain = false; await loadOnce(quiet); } while (loadAgain); } finally { loadP = null; } })();
+  return loadP;
+}
+async function loadOnce(quiet) {
   setS('spin', 'Загрузка…');
   try {
     if (!url) throw new Error('не указан адрес сервера');
@@ -539,7 +545,6 @@ async function load(quiet) {
     setS('ok', 'Обновлено в ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
     render();
   } catch (e) { setS('err', 'Ошибка: ' + e.message); if (!quiet) toast('Не удалось загрузить данные', true); }
-  busy = false;
 }
 
 /* ─── сводка ─── */
