@@ -278,8 +278,8 @@ input.bad{border-color:var(--red)}
     <div id="tariff-msg"></div>
   </div>
   <div class="card">
-    <div class="ct"><i class="ti ti-toggle-right"></i> Участки</div>
-    <p class="sub">Выключенный участок скрыт из сводки и списка для всех, кроме администратора, а код его владельца перестаёт действовать. Записи сохраняются — участок можно включить обратно.</p>
+    <div class="ct" style="justify-content:space-between;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:8px"><i class="ti ti-users"></i> Участки и дачники</span><button class="btn btn-sm btn-p" onclick="openPlot()"><i class="ti ti-user-plus"></i> Добавить дачника</button></div>
+    <p class="sub">Карандаш — изменить ФИО, телефон, номер участка или код владельца. Переключатель — включить или выключить участок: выключенный скрыт из сводки для всех, кроме администратора, код владельца не действует, записи сохраняются.</p>
     <div id="cfg-plots"></div>
   </div>
   <div class="card">
@@ -302,6 +302,33 @@ input.bad{border-color:var(--red)}
       <button class="btn" onclick="closeLogin()">Отмена</button>
     </div>
     <div id="login-err"></div>
+  </div>
+</div>
+
+<!-- УЧАСТОК: добавить / изменить (администратор) -->
+<div class="overlay hidden" id="plot-ov" onclick="if(event.target===this)closePlot()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pe-t" style="max-width:480px;max-height:calc(100vh - 32px);overflow:auto">
+    <div class="modal-title" id="pe-t">Участок</div>
+    <div class="modal-sub" id="pe-sub"></div>
+    <div class="fgrid">
+      <div class="fg wide"><label for="pe-name">ФИО владельца <span class="req">*</span></label><input type="text" id="pe-name" maxlength="80" autocomplete="off" placeholder="Иванов И.И."></div>
+      <div class="fg"><label for="pe-num">Номер участка</label><input type="text" id="pe-num" inputmode="numeric" maxlength="5" placeholder="например, 12"></div>
+      <div class="fg"><label for="pe-phone">Телефон</label><input type="tel" id="pe-phone" inputmode="tel" maxlength="20" placeholder="+7 701 123 45 67" autocomplete="off"></div>
+      <div class="fg wide"><label for="pe-code">Код владельца (4 цифры)</label><input type="text" id="pe-code" inputmode="numeric" maxlength="4" autocomplete="off"><div class="hint" id="pe-code-hint"></div></div>
+    </div>
+    <div id="pe-new">
+      <div class="divider"></div>
+      <p class="sub" style="margin-bottom:10px">Начальные данные (необязательно): с какого показания счётчика начинать и какой баланс у дачника сейчас.</p>
+      <div class="fgrid">
+        <div class="fg"><label for="pe-read">Показание счётчика, кВт·ч</label><input type="number" id="pe-read" inputmode="decimal" min="0" step="any" placeholder="0"></div>
+        <div class="fg"><label for="pe-bal">Баланс сейчас, ₸</label><input type="number" id="pe-bal" inputmode="decimal" step="any" placeholder="0"><div class="hint">минус — долг</div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-p" style="flex:1" id="pe-btn" onclick="savePlotForm()"><i class="ti ti-device-floppy"></i> Сохранить</button>
+      <button class="btn" onclick="closePlot()">Отмена</button>
+    </div>
+    <div id="pe-msg"></div>
   </div>
 </div>
 
@@ -361,7 +388,7 @@ const monthsSince = s => (Date.now() - pDate(s)) / (1000 * 60 * 60 * 24 * 30.4);
 
 /* ─── участки и записи ─── */
 function shortName(n) { return String(n || '').replace(/\(.*?\)/g, '').replace(/уч\.?\s*\d+/i, '').trim(); }
-function plotNo(n) { const m = String(n || '').match(/уч\.?\s*(\d+)/i); return m ? m[1] : ''; }
+function plotNo(n) { if (n && typeof n === 'object') return n.number || plotNo(n.name); const m = String(n || '').match(/уч\.?\s*(\d+[а-яa-z]?)/i); return m ? m[1] : ''; }
 function isReal(r) { return !!(r.date && (r.reading > 0 || r.consumption > 0 || r.topup > 0 || r.cost > 0)); }
 const recs = p => (p.records || []).filter(isReal);
 const lastR = p => { const rr = recs(p); return rr.length ? rr[rr.length - 1] : null; };
@@ -372,7 +399,8 @@ const isOwner = () => session?.role === 'owner';
 const canEdit = p => !!p && (isAdmin() || (isOwner() && session.plotId === p.id));
 const myPlots = () => isAdmin() ? plots : plots.filter(p => isOwner() && p.id === session.plotId);
 function stale(p) { const l = lastR(p); if (!l) return false; const y = pDate(l.date).getFullYear(); return y > 2023 && monthsSince(l.date) > 2; }
-const plotLabel = p => esc(shortName(p.name)) + (plotNo(p.name) ? ` <span style="color:var(--text2);font-weight:400">· уч. ${esc(plotNo(p.name))}</span>` : '');
+const ownerOf = p => p.ownerName || shortName(p.name);
+const plotLabel = p => esc(ownerOf(p)) + (plotNo(p) ? ` <span style="color:var(--text2);font-weight:400">· уч. ${esc(plotNo(p))}</span>` : '');
 
 /* ─── вход ─── */
 function updateUI() {
@@ -517,7 +545,7 @@ function plotPicker(wrap, sel, onchange, preferId) {
   if (!avail.length) { $(wrap).innerHTML = `<div class="msg merr" id="${sel}">${isOwner() ? 'Ваш участок отключён администратором' : 'Нет участков'}</div>`; return NaN; }
   if (avail.length === 1) { $(wrap).innerHTML = `<div class="plot-fixed" data-id="${avail[0].id}" id="${sel}">${plotLabel(avail[0])}</div>`; return avail[0].id; }
   const pick = avail.some(p => p.id === Number(preferId)) ? Number(preferId) : ($(sel)?.value ? Number($(sel).value) : avail[0]?.id);
-  $(wrap).innerHTML = `<select id="${sel}" onchange="${onchange}()">${avail.map(p => `<option value="${p.id}" ${p.id === pick ? 'selected' : ''}>${esc(shortName(p.name))}${plotNo(p.name) ? ' · уч. ' + esc(plotNo(p.name)) : ''}${act(p) ? '' : ' (отключён)'}</option>`).join('')}</select>`;
+  $(wrap).innerHTML = `<select id="${sel}" onchange="${onchange}()">${avail.map(p => `<option value="${p.id}" ${p.id === pick ? 'selected' : ''}>${esc(ownerOf(p))}${plotNo(p) ? ' · уч. ' + esc(plotNo(p)) : ''}${act(p) ? '' : ' (отключён)'}</option>`).join('')}</select>`;
   return pick;
 }
 const pickedId = sel => { const e = $(sel); return e ? Number(e.dataset.id || e.value) : NaN; };
@@ -658,9 +686,44 @@ function renderCfgPlots() {
   if (!isAdmin()) return;
   $('cfg-plots').innerHTML = plots.map(p => {
     const l = lastR(p);
-    return `<div class="sw-row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm" id="sw-st${p.id}">${act(p) ? 'включён' : '<span class="neg">отключён</span>'} · ${l ? 'баланс ' + money(l.balance) : 'записей нет'}</div></div>
+    return `<div class="sw-row"><div style="min-width:0;flex:1"><div class="nm">${plotLabel(p)}</div><div class="sm" id="sw-st${p.id}">${act(p) ? 'включён' : '<span class="neg">отключён</span>'} · ${l ? 'баланс ' + money(l.balance) : 'записей нет'}${p.phone ? ' · ' + esc(p.phone) : ''}</div></div>
+      <button class="ibtn icon" onclick="openPlot(${p.id})" title="Изменить" aria-label="Изменить участок ${esc(ownerOf(p))}"><i class="ti ti-pencil"></i></button>
       <label class="sw" title="${act(p) ? 'Выключить' : 'Включить'}"><input type="checkbox" id="sw${p.id}" ${act(p) ? 'checked' : ''} onchange="togglePlot(${p.id}, this)" aria-label="Участок ${esc(shortName(p.name))} включён"><span></span></label></div>`;
   }).join('') || '<div class="empty">Нет участков</div>';
+}
+let editId = null;
+function openPlot(id) {
+  if (!isAdmin()) return;
+  const p = id ? byId(id) : null; editId = p ? p.id : null;
+  $('pe-t').textContent = p ? 'Изменить участок' : 'Новый дачник';
+  $('pe-sub').textContent = p ? `Сейчас: ${p.name}` : 'Код владельца можно оставить пустым — он будет создан сам.';
+  $('pe-name').value = p ? (p.ownerName || shortName(p.name)) : '';
+  $('pe-num').value = p ? plotNo(p) : '';
+  $('pe-phone').value = p ? (p.phone || '') : '';
+  $('pe-code').value = '';
+  $('pe-code').placeholder = p ? (p.storedPwd ? 'сейчас ' + p.storedPwd : 'нет кода') : 'создать автоматически';
+  $('pe-code-hint').textContent = p ? 'Оставьте пустым, чтобы не менять' : '';
+  $('pe-new').style.display = p ? 'none' : '';
+  ['pe-read', 'pe-bal'].forEach(i => $(i).value = '');
+  $('pe-msg').innerHTML = '';
+  $('plot-ov').classList.remove('hidden');
+  setTimeout(() => $('pe-name').focus(), 50);
+}
+function closePlot() { $('plot-ov').classList.add('hidden'); }
+async function savePlotForm() {
+  const body = { action: 'savePlot', ownerName: $('pe-name').value, number: $('pe-num').value, phone: $('pe-phone').value };
+  if ($('pe-code').value.trim()) body.password = $('pe-code').value.trim();
+  if (editId) body.plotId = editId;
+  else { if ($('pe-read').value !== '') body.initialReading = num($('pe-read').value); if ($('pe-bal').value !== '') body.initialBalance = num($('pe-bal').value); }
+  if (!body.ownerName.trim()) return msg('pe-msg', false, 'Укажите ФИО владельца');
+  if (body.password && !/^\d{4}$/.test(body.password)) return msg('pe-msg', false, 'Код — 4 цифры');
+  const btn = $('pe-btn'); btn.disabled = true;
+  try {
+    const d = await apiPost(body); if (d.error) throw new Error(d.error);
+    closePlot(); toast(editId ? 'Участок изменён' : 'Дачник добавлен');
+    await load(true);
+  } catch (e) { msg('pe-msg', false, e.message); }
+  btn.disabled = false;
 }
 async function togglePlot(id, el) {
   const p = byId(id); if (!p || !isAdmin()) return;
@@ -692,7 +755,7 @@ function saveUrl() {
 /* ─── старт ─── */
 updateUI();
 load();
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLogin(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLogin(); closePlot(); } });
 </script>
 </body>
 </html>

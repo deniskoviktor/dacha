@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS plots (
 
 -- Участок можно отключить (продан, не участвует): скрыт для всех, кроме администратора, код владельца не действует
 ALTER TABLE plots ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
+-- Отдельные поля (раньше всё было в названии «Эмир(+7701…) уч. 1»); название собирается из них
+ALTER TABLE plots ADD COLUMN IF NOT EXISTS owner_name  TEXT;
+ALTER TABLE plots ADD COLUMN IF NOT EXISTS phone       TEXT NOT NULL DEFAULT '';
+ALTER TABLE plots ADD COLUMN IF NOT EXISTS plot_number TEXT NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS records (
   id              SERIAL PRIMARY KEY,    -- порядок записей внутри участка

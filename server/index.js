@@ -6,7 +6,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
-const { pool, initSchema, tx, toIsoDate, fromIsoDate, num } = require('./db');
+const { pool, initSchema, tx, toIsoDate, fromIsoDate, num, composePlotName } = require('./db');
 
 const PORT = Number(process.env.PORT || 8080);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
@@ -146,8 +146,8 @@ async function getData(sess) {
   }
   return {
     plots: plots.map(p => {
-      const o = { id: p.id, name: isAdmin ? p.name : publicName(p.name), active: p.active, records: byPlot.get(p.id) };
-      if (isAdmin) o.storedPwd = p.password || ''; // коды и телефоны видит только администратор
+      const o = { id: p.id, name: isAdmin ? p.name : publicName(p.name), number: p.plot_number || '', active: p.active, records: byPlot.get(p.id) };
+      if (isAdmin) Object.assign(o, { storedPwd: p.password || '', ownerName: p.owner_name || '', phone: p.phone || '' }); // коды и телефоны видит только администратор
       return o;
     }),
   };
@@ -248,6 +248,61 @@ async function savePasswords(sess, b) {
   });
 }
 
+/** Добавить дачника или изменить участок (только администратор). */
+const normPhone = (v) => {
+  const d = String(v || '').replace(/[^\d+]/g, '');
+  if (!d) return '';
+  const digits = d.replace(/\D/g, '');
+  if (digits.length === 11 && /^[78]/.test(digits)) return '+7' + digits.slice(1); // 8 701… → +7701…
+  if (digits.length === 10) return '+7' + digits;
+  if (digits.length < 10 || digits.length > 15) throw new UserError('Телефон: нужно 10–11 цифр, например +7 701 123 45 67');
+  return (d.startsWith('+') ? '+' : '') + digits;
+};
+async function savePlot(sess, b) {
+  needAdmin(sess);
+  const ownerName = String(b.ownerName || '').replace(/\s+/g, ' ').trim();
+  const number = String(b.number || '').replace(/^уч\.?\s*/i, '').trim();
+  const phone = normPhone(b.phone);
+  if (!ownerName) throw new UserError('Укажите ФИО владельца');
+  if (ownerName.length > 80) throw new UserError('ФИО слишком длинное');
+  if (number && !/^\d{1,4}[а-яa-zА-ЯA-Z]?$/.test(number)) throw new UserError('Номер участка — цифры (можно с буквой), например 12 или 12а');
+  const code = b.password === undefined || b.password === null ? undefined : String(b.password).trim();
+  if (code !== undefined && code !== '' && !/^\d{4}$/.test(code)) throw new UserError('Код владельца — 4 цифры');
+  if (code && ADMIN_PASSWORD && code === ADMIN_PASSWORD) throw new UserError('Код совпадает с паролем администратора');
+  const name = composePlotName({ ownerName, phone, number });
+  return tx(async c => {
+    const isNew = !(b.plotId !== undefined && b.plotId !== null && b.plotId !== '');
+    const plot = isNew ? null : await plotOf(c, b, true);
+    const others = (await c.query('SELECT id, name, plot_number, password FROM plots WHERE id <> $1', [plot ? plot.id : 0])).rows;
+    if (number && others.some((o) => o.plot_number && o.plot_number.toLowerCase() === number.toLowerCase())) throw new UserError(`Участок № ${number} уже есть`);
+    if (others.some((o) => o.name === name)) throw new UserError('Такой участок уже есть');
+    if (code && others.some((o) => o.password === code)) throw new UserError('Такой код уже у другого участка');
+    let id;
+    if (isNew) {
+      // код — свой или сгенерированный (уникальный)
+      let pw = code;
+      if (!pw) { const used = new Set(others.map((o) => o.password)); do { pw = String(1000 + crypto.randomInt(9000)); } while (used.has(pw) || pw === ADMIN_PASSWORD); }
+      const so = (await c.query('SELECT coalesce(max(sort_order), -1) + 1 AS n FROM plots')).rows[0].n;
+      id = (await c.query('INSERT INTO plots(name, owner_name, phone, plot_number, password, sort_order, active) VALUES ($1,$2,$3,$4,$5,$6,true) RETURNING id', [name, ownerName, phone, number, pw, so])).rows[0].id;
+      // начальные показания и баланс (если указаны) — первой записью
+      const r0 = num(b.initialReading), bal0 = num(b.initialBalance);
+      if (r0 > 0 || bal0) {
+        // начальные — вчерашним числом, чтобы сегодня дачник уже мог внести свои показания
+        const date = toIsoDate(b.initialDate) || new Date(Date.parse(todayIso()) - 86400000).toISOString().slice(0, 10);
+        await c.query(`INSERT INTO records(plot_id, date, reading, prev_reading, consumption, price, cost, topup, balance_before, balance, note, created_by)
+          VALUES ($1,$2,$3,$3,0,$4,0,0,$5,$5,'Начальные показания','admin')`, [id, date, r0, await getTariff(c), bal0]);
+      }
+      await audit(c, sess, 'addPlot', name, { plotId: id, number, initialReading: r0, initialBalance: bal0 });
+    } else {
+      id = plot.id;
+      await c.query('UPDATE plots SET name=$2, owner_name=$3, phone=$4, plot_number=$5 WHERE id=$1', [id, name, ownerName, phone, number]);
+      if (code) await c.query('UPDATE plots SET password=$2 WHERE id=$1', [id, code]);
+      await audit(c, sess, 'editPlot', name, { plotId: id, from: plot.name, number, codeChanged: !!code && code !== plot.password });
+    }
+    return { ok: true, plotId: id, name };
+  });
+}
+
 async function setPlotActive(sess, b) {
   needAdmin(sess);
   const active = b.active === true || b.active === 'true';
@@ -305,6 +360,7 @@ app.post('/api', wrap(async req => {
     case 'savePasswords': return savePasswords(sess, b);
     case 'setTariff': return setTariff(sess, b);
     case 'setPlotActive': return setPlotActive(sess, b);
+    case 'savePlot': return savePlot(sess, b);
     default: throw new UserError('Неизвестное действие');
   }
 }));

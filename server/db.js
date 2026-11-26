@@ -14,10 +14,32 @@ const pool = new Pool({
   database: process.env.PGDATABASE || 'dacha',
 });
 
+/** «Эмир(+77011118517) уч. 1» → { ownerName: 'Эмир', phone: '+77011118517', number: '1' } */
+function parsePlotName(name) {
+  let s = String(name || '').trim(), phone = '', number = '';
+  const ph = s.match(/\(\s*(\+?[\d\s()-]{7,})\s*\)/) || s.match(/(\+?\d[\d\s-]{9,}\d)/);
+  if (ph) { phone = ph[1].replace(/[^\d+]/g, ''); s = s.replace(ph[0], ' '); }
+  const no = s.match(/уч(?:асток)?\.?\s*№?\s*(\d+[а-яa-z]?)/i);
+  if (no) { number = no[1]; s = s.replace(no[0], ' '); }
+  s = s.replace(/\(\s*\)/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  return { ownerName: s, phone, number };
+}
+/** Обратно — то же «название», что было в таблице (по нему работают старые страницы и журнал). */
+function composePlotName({ ownerName, phone, number }) {
+  return `${String(ownerName || '').trim()}${phone ? `(${phone})` : ''}${number ? ` уч. ${number}` : ''}`;
+}
+
 async function initSchema() {
   const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   for (let i = 1; ; i++) {
-    try { await pool.query(sql); return; }
+    try {
+      await pool.query(sql);
+      // поля ФИО / телефон / номер участка — один раз заполняем из названия
+      const todo = (await pool.query('SELECT id, name FROM plots WHERE owner_name IS NULL')).rows;
+      for (const p of todo) { const x = parsePlotName(p.name); await pool.query('UPDATE plots SET owner_name=$2, phone=$3, plot_number=$4 WHERE id=$1', [p.id, x.ownerName, x.phone, x.number]); }
+      if (todo.length) console.log(`Поля участков заполнены из названий: ${todo.length}`);
+      return;
+    }
     catch (e) {
       if (i >= 30) throw e;
       console.log(`База ещё не готова (${e.code || e.message}), повтор через 2 с…`);
@@ -96,4 +118,4 @@ const num = v => {
   return isFinite(n) ? n : 0;
 };
 
-module.exports = { pool, initSchema, tx, normDate, toIsoDate, fromIsoDate, num };
+module.exports = { pool, initSchema, tx, normDate, toIsoDate, fromIsoDate, num, parsePlotName, composePlotName };

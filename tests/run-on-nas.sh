@@ -13,12 +13,12 @@ B=$(ls -t $PROD/backups/*.sql.gz | head -1); echo "копия базы: $B"
 gunzip -c "$B" | docker compose -p dacha-test exec -T db psql -q -U dacha dacha >/dev/null 2>&1 || true
 docker compose -p dacha-test exec -T db psql -q -U dacha dacha -c "UPDATE plots SET password='1111' WHERE name LIKE 'Вадим В.%'" >/dev/null
 docker restart dacha-test-app-1 >/dev/null; sleep 4
-echo "=== API ==="; docker cp $T/tests/api.test.mjs dacha-test-app-1:/tmp/ && docker exec dacha-test-app-1 node /tmp/api.test.mjs http://127.0.0.1:8080/api; A=$?
+echo "=== API ==="; docker cp $T/tests/api.test.mjs dacha-test-app-1:/tmp/ && A=0; docker exec dacha-test-app-1 node /tmp/api.test.mjs http://127.0.0.1:8080/api || A=$?
 # база заново для UI
 docker compose -p dacha-test exec -T db psql -q -U dacha dacha -c "TRUNCATE records, plots, audit_log RESTART IDENTITY CASCADE" >/dev/null
 gunzip -c "$B" | docker compose -p dacha-test exec -T db psql -q -U dacha dacha >/dev/null 2>&1 || true
 docker compose -p dacha-test exec -T db psql -q -U dacha dacha -c "UPDATE plots SET password='1111' WHERE name LIKE 'Вадим В.%'" >/dev/null
 docker restart dacha-test-app-1 >/dev/null; sleep 4
-echo "=== UI ==="; docker run --rm --network host --ipc=host -v $T/tests:/t -v $OUT:/out -w /tmp mcr.microsoft.com/playwright:v1.49.1-noble sh -c "npm i --silent playwright@1.49.1 >/dev/null 2>&1; cp /t/ui.test.mjs . && node ui.test.mjs http://127.0.0.1:8097/"; U=$?
+echo "=== UI ==="; U=0; docker run --rm --network host --ipc=host -v $T/tests:/t -v $OUT:/out -w /tmp mcr.microsoft.com/playwright:v1.49.1-noble sh -c "npm i --silent playwright@1.49.1 >/dev/null 2>&1; cp /t/ui.test.mjs . && node ui.test.mjs http://127.0.0.1:8097/" || U=$?
 docker compose -p dacha-test down -v >/dev/null 2>&1; cd / && rm -rf $T
 echo "снимки экрана: $OUT"; [ $A -eq 0 ] && [ $U -eq 0 ]

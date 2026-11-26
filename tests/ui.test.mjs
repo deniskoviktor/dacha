@@ -94,6 +94,23 @@ await run('Компьютер, администратор (9999):', { viewport: 
   await p.click('#nav-cfg'); await p.locator('#cfg-plots .sw input').first().click();
   await p.waitForFunction(() => !document.querySelector('#cfg-plots .sw-row .sm')?.textContent.includes('отключён'));
   ok(true, 'включён обратно');
+  await p.click('#cfg-plots .ibtn');
+  ok(await p.locator('#plot-ov').isVisible() && (await p.inputValue('#pe-name')).length > 0, 'карандаш — окно с ФИО, номером, телефоном');
+  await p.fill('#pe-num', '99'); await p.click('#pe-btn');
+  await p.waitForFunction(() => document.getElementById('plot-ov').classList.contains('hidden'));
+  const got99 = await p.waitForFunction(() => document.querySelector('#cfg-plots .sw-row')?.textContent.includes('уч. 99'), null, { timeout: 10000 }).then(() => true, () => false);
+  ok(got99, 'номер участка изменён');
+  await p.click('#pg-cfg button:has-text("Добавить дачника")');
+  await p.fill('#pe-name', 'Тестов Т.Т.'); await p.fill('#pe-num', '77'); await p.fill('#pe-phone', '87011234567'); await p.fill('#pe-read', '1200'); await p.fill('#pe-bal', '500');
+  await p.screenshot({ path: `${OUT}/8-новый-дачник.png` });
+  await p.click('#pe-btn');
+  await p.waitForFunction(() => document.querySelectorAll('#cfg-plots .sw-row').length === 14, null, { timeout: 10000 }).catch(() => {});
+  ok((await p.locator('#cfg-plots').innerText()).includes('Тестов Т.Т.'), 'новый дачник появился в списке');
+  ok((await p.locator('#cfg-plots').innerText()).includes('+77011234567'), 'телефон приведён к виду +7…');
+  await p.click('#pg-cfg button:has-text("Добавить дачника")'); await p.fill('#pe-name', 'Дубль'); await p.fill('#pe-num', '77'); await p.click('#pe-btn');
+  await p.waitForSelector('#pe-msg .merr');
+  ok((await p.locator('#pe-msg').innerText()).includes('уже есть'), 'повтор номера — понятная ошибка в окне');
+  await p.click('#plot-ov button:has-text("Отмена")');
   await p.screenshot({ path: `${OUT}/7-настройки-участки.png`, fullPage: true });
 });
 

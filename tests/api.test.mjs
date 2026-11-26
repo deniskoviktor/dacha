@@ -58,6 +58,32 @@ ok((await post({ action: 'updatePayment', token: tok, plotId: my, topup: 10 })).
 ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: true })).ok && (await get({ action: 'getData' })).plots.length === 13, 'включён обратно — снова 13');
 ok((await post({ action: 'checkPassword', password: '1111' })).ok, 'код владельца снова действует');
 
+console.log('Редактирование участков и новые дачники:');
+const adm1 = await get({ action: 'getData', token: tok });
+const emir = adm1.plots.find(p => p.number === '1');
+ok(emir && emir.ownerName === 'Эмир' && /^\+7\d{10}$/.test(emir.phone), 'поля разобраны из названия: ФИО, телефон, номер', JSON.stringify(emir && { o: emir.ownerName, n: emir.number }));
+ok((await post({ action: 'savePlot', token: T, plotId: my, ownerName: 'X' })).error?.includes('администратора'), 'владелец не может редактировать участки');
+const ed = await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', number: '21', phone: '8 701 555 44 33' });
+ok(ed.ok && ed.name === 'Вадимов В.В.(+77015554433) уч. 21', 'изменены ФИО, номер и телефон (8 701… → +7701…)', JSON.stringify(ed));
+const pub = (await get({ action: 'getData' })).plots.find(p => p.id === my);
+ok(pub.name === 'Вадимов В.В. уч. 21' && pub.number === '21' && !('phone' in pub), 'без входа: новое название без телефона', JSON.stringify(pub.name));
+ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', number: '1' })).error?.includes('уже есть'), 'повтор номера участка — отказ');
+ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: '' })).error?.includes('ФИО'), 'пустое ФИО — отказ');
+ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', phone: '123' })).error?.includes('Телефон'), 'неверный телефон — отказ');
+ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', password: '9999' })).error?.includes('администратора'), 'код = пароль администратора — отказ');
+ok((await post({ action: 'checkPassword', password: '1111' })).ok, 'после переименования старый код владельца работает');
+ok((await post({ action: 'updatePayment', token: T, plotId: my, topup: 1 })).ok, 'сессия владельца после переименования работает');
+const nw = await post({ action: 'savePlot', token: tok, ownerName: 'Новиков Н.Н.', number: '30', phone: '+7 777 000 11 22', initialReading: 5000, initialBalance: -150 });
+ok(nw.ok && nw.plotId, 'добавлен новый дачник', JSON.stringify(nw));
+const adm2 = await get({ action: 'getData', token: tok }); const np = adm2.plots.find(p => p.id === nw.plotId);
+ok(np && /^\d{4}$/.test(np.storedPwd) && np.records.length === 1 && Number(np.records[0].reading) === 5000 && Number(np.records[0].balance) === -150, 'код создан сам, первая запись: 5000 кВт·ч, баланс −150');
+const nlog = await post({ action: 'checkPassword', password: np.storedPwd });
+ok(nlog.ok && nlog.plotId === np.id, 'новый дачник входит по своему коду');
+const nrec = await post({ action: 'addRecord', token: nlog.token, plotId: np.id, reading: 5010, topup: 0, date: today });
+ok(nrec.ok && nrec.consumption === 10 && Math.abs(nrec.newBalance - (-150 - 360)) < 0.01, 'новый дачник вносит показания: расход 10, баланс −510');
+ok((await post({ action: 'savePlot', token: tok, ownerName: 'Ещё Один', password: np.storedPwd })).error?.includes('другого участка'), 'повтор кода — отказ');
+ok((await get({ action: 'getData' })).plots.length === 14, 'без входа — 14 участков');
+
 console.log('Совместимость со старой страницей (по названию):');
 const legacy = await post({ action: 'updatePayment', token: la.token, plotName: adm.plots.find(p => p.id === other).name, topup: 1 });
 ok(legacy.ok, 'запрос по plotName работает');
