@@ -372,6 +372,8 @@ app.get('/healthz', async (req, res) => {
 // Сама страница и инструкции — тот же index.html, что на GitHub
 app.get(['/', '/index.html', '/instrukciya_polzovatelya.pdf', '/instrukciya_polzovatelya1.pdf'], (req, res) => {
   const f = req.path === '/' ? 'index.html' : req.path.slice(1);
+  // страницу браузер всегда перепроверяет — после обновления сразу видна новая версия
+  if (f === 'index.html') res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   res.sendFile(path.join(STATIC_DIR, f));
 });
 
