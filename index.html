@@ -140,6 +140,29 @@ body.locked .lg-cancel{display:none}
 .sw input:checked+span::after{transform:translateX(22px)}
 .sw input:disabled+span{opacity:.5}
 .pc.off{opacity:.6}
+/* участок: графики по месяцам */
+:root{--c-pay:#2a6fb8;--c-cost:#d0782a}
+@media(prefers-color-scheme:dark){:root{--c-pay:#4a8fd6;--c-cost:#d9823a}}
+.pl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.pl-bal{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.pl-sel{margin-bottom:12px}
+.seg{display:inline-flex;background:var(--bg2);border-radius:999px;padding:3px;gap:2px;margin-bottom:12px}
+.seg button{border:0;background:none;color:var(--text2);padding:6px 14px;border-radius:999px;font-size:13px;font-weight:550;cursor:pointer}
+.seg button.on{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.kpi{background:var(--bg2);border-radius:var(--r);padding:8px 10px}.kpi .l{font-size:12px;color:var(--text2)}.kpi .v{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chart{position:relative;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart text{font-size:11px;fill:var(--text2);font-variant-numeric:tabular-nums}
+.chart .grid{stroke:var(--border);stroke-width:1}.chart .base{stroke:var(--border2);stroke-width:1}
+.chart .hl{fill:var(--text);opacity:0}.chart .col.on .hl{opacity:.06}
+.ctip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:6px 9px;font-size:12px;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.15);white-space:nowrap;display:none;z-index:2}
+.ctip b{font-variant-numeric:tabular-nums}.ctip .sw,.legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--text2);margin:-4px 0 8px;flex-wrap:wrap}
+.mt td,.mt th{padding:7px 8px}.mt{font-size:13px}
+details.hist>summary{cursor:pointer;font-weight:650;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px}
+details.hist>summary::-webkit-details-marker{display:none}
+details.hist[open]>summary .chev{transform:rotate(180deg)}
 /* уведомление */
 .toast{position:fixed;left:50%;top:16px;transform:translateX(-50%) translateY(-160%);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:var(--r);font-size:15px;z-index:200;transition:transform .25s;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -187,7 +210,7 @@ body.locked .lg-cancel{display:none}
 
 <nav class="tabs" id="tabs">
   <button class="nb active" data-p="ov" onclick="go('ov')"><i class="ti ti-layout-dashboard"></i><span>Сводка</span></button>
-  <button class="nb" data-p="pl" onclick="go('pl')"><i class="ti ti-home"></i><span>Участки</span></button>
+  <button class="nb" data-p="pl" onclick="go('pl')"><i class="ti ti-chart-bar"></i><span id="nb-pl">Участки</span></button>
   <button class="nb" data-p="add" onclick="go('add')"><i class="ti ti-gauge"></i><span>Показания</span></button>
   <button class="nb" data-p="pay" onclick="go('pay')"><i class="ti ti-cash"></i><span>Оплата</span></button>
   <button class="nb" data-p="pwd" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i><span>Коды</span></button>
@@ -339,7 +362,7 @@ body.locked .lg-cancel{display:none}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 16:10</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 17:20</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -417,6 +440,7 @@ function updateUI() {
   $('btn-logout').style.display = session ? '' : 'none';
   $('nav-pwd').style.display = isAdmin() ? '' : 'none';
   $('nav-cfg').style.display = isAdmin() ? '' : 'none';
+  $('nb-pl').textContent = isAdmin() ? 'Участки' : 'Мой участок';
   if (session) {
     b.style.display = '';
     if (isAdmin()) { b.className = 'ubadge admin hide-m'; b.innerHTML = '<i class="ti ti-shield"></i> Администратор'; }
@@ -525,22 +549,100 @@ function renderOv() {
 }
 
 /* ─── участки ─── */
+/* ─── участок: только свой (админ — любой), графики по месяцам ─── */
+const plState = { id: null, range: 12 };
+const MON = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const MONF = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+/** По месяцам (по дате записи): расход, начислено, оплачено, баланс на конец месяца; пустые месяцы — нулями. */
+function monthly(p) {
+  const rs = recs(p).map(r => ({ r, d: pDate(r.date) })).filter(x => x.d.getTime() > 0);
+  if (!rs.length) return [];
+  const map = new Map();
+  for (const { r, d } of rs) {
+    const k = d.getFullYear() * 12 + d.getMonth();
+    const m = map.get(k) || { kwh: 0, cost: 0, pay: 0, bal: null };
+    m.kwh += Number(r.consumption) || 0; m.cost += Number(r.cost) || 0; m.pay += Number(r.topup) || 0; m.bal = Number(r.balance) || 0;
+    map.set(k, m);
+  }
+  const ks = [...map.keys()], first = Math.min(...ks), now = new Date(), last = Math.max(Math.max(...ks), now.getFullYear() * 12 + now.getMonth());
+  const out = []; let bal = 0;
+  for (let k = first; k <= last; k++) {
+    const m = map.get(k); if (m) bal = m.bal;
+    out.push({ y: Math.floor(k / 12), m: k % 12, kwh: m?.kwh || 0, cost: m?.cost || 0, pay: m?.pay || 0, bal });
+  }
+  return out;
+}
+const niceMax = v => { if (!(v > 0)) return 1; const e = Math.pow(10, Math.floor(Math.log10(v))); return [1, 2, 2.5, 5, 10].map(x => x * e).find(x => x >= v); };
+const shortNum = v => v >= 1e6 ? fmt(v / 1e6) + ' млн' : v >= 1e4 ? fmt(Math.round(v / 1e3)) + ' тыс' : fmt(v);
+function topBar(x, y, w, h) { const r = Math.min(4, w / 2, h); return h <= 0 ? '' : `<path d="M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z"/>`; }
+/** Столбики по месяцам: одна ось, серии рядом с зазором 2px, подсказка по колонке. */
+function drawBars(el, months, series, unit) {
+  const W = Math.max(280, el.clientWidth), H = 190, L = 46, R = 6, T = 10, B = 24, cw = (W - L - R) / months.length, ph = H - T - B;
+  const max = niceMax(Math.max(...months.flatMap(m => series.map(sr => m[sr.key]))));
+  const grid = [0, .5, 1].map(f => { const y = T + ph - f * ph; return `<line class="${f ? 'grid' : 'base'}" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${shortNum(max * f)}</text>`; }).join('');
+  const long = months.length > 12, step = Math.ceil(months.length / Math.max(1, Math.floor((W - L) / (long ? 56 : 40))));
+  const gap = 2, bw = Math.max(2, Math.min(22, (cw * .7 - gap * (series.length - 1)) / series.length)), gw = bw * series.length + gap * (series.length - 1);
+  const cols = months.map((m, i) => {
+    const x0 = L + i * cw;
+    const bars = series.map((sr, j) => { const h = m[sr.key] / max * ph; return `<g fill="${sr.color}">${topBar(x0 + (cw - gw) / 2 + j * (bw + gap), T + ph - h, bw, h)}</g>`; }).join('');
+    const lab = (months.length - 1 - i) % step === 0 ? `<text x="${x0 + cw / 2}" y="${H - 6}" text-anchor="middle">${MON[m.m]}${long ? ' ' + String(m.y).slice(2) : ''}</text>` : '';
+    return `<g class="col" data-i="${i}"><rect class="hl" x="${x0}" y="${T}" width="${cw}" height="${ph}"/>${bars}${lab}<rect x="${x0}" y="0" width="${cw}" height="${H}" fill="transparent"/></g>`;
+  }).join('');
+  el.innerHTML = `<svg height="${H}" viewBox="0 0 ${W} ${H}" role="img">${grid}${cols}</svg><div class="ctip"></div>`;
+  const tip = el.querySelector('.ctip');
+  const show = (g) => {
+    el.querySelectorAll('.col.on').forEach(c => c.classList.remove('on'));
+    if (!g) { tip.style.display = 'none'; return; }
+    g.classList.add('on'); const m = months[+g.dataset.i];
+    tip.innerHTML = `<div style="font-weight:650">${MONF[m.m]} ${m.y}</div>` + series.map(sr => `<div><span class="sw" style="background:${sr.color}"></span>${sr.label}: <b>${unit === '₸' ? money(m[sr.key]) : fmt(m[sr.key]) + ' ' + unit}</b></div>`).join('') + (unit === '₸' ? `<div style="color:var(--text2)">Баланс на конец: <b class="${m.bal >= 0 ? 'pos' : 'neg'}">${money(m.bal)}</b></div>` : '');
+    tip.style.display = 'block';
+    const x = L + (+g.dataset.i + .5) * cw, tw = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(0, x - tw / 2), W - tw) + 'px'; tip.style.top = '-8px'; tip.style.transform = 'translateY(-100%)';
+  };
+  el.onpointermove = e => show(e.target.closest('.col'));
+  el.onpointerdown = e => show(e.target.closest('.col'));
+  el.onpointerleave = e => { if (e.pointerType === 'mouse') show(null); };
+}
 function renderPl() {
   const el = $('pl-list');
-  if (!plots.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const list = isOwner() ? [...myPlots(), ...plots.filter(p => p.id !== session.plotId)] : [...plots.filter(act), ...plots.filter(p => !act(p))];
-  el.innerHTML = list.map(p => {
-    const l = lastR(p), b = l ? Number(l.balance) : null;
-    const acts = canEdit(p) ? `<div class="pacts"><button class="btn btn-sm btn-p" onclick="go('add',${p.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn btn-sm" onclick="go('pay',${p.id})"><i class="ti ti-cash"></i> Пополнить</button></div>` : '';
-    return `<div class="pc${act(p) ? '' : ' off'}" id="pc${p.id}">
-      <button class="pch" onclick="this.parentNode.classList.toggle('open')" aria-expanded="false">
-        <div style="min-width:0"><div class="pname">${plotLabel(p)}${canEdit(p) && isOwner() ? ' <span class="badge bok">мой</span>' : ''}${act(p) ? '' : ' <span class="badge berr">отключён</span>'}</div><div class="pmeta">${recs(p).length} записей · ${l ? esc(l.date) : 'нет данных'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
-        <div style="display:flex;align-items:center;gap:8px"><div class="amt ${b === null ? '' : b >= 0 ? 'pos' : 'neg'}">${b === null ? '—' : money(b)}</div><i class="ti ti-chevron-down chev"></i></div>
-      </button>
-      <div class="pd">${acts}${records(p)}</div>
-    </div>`;
-  }).join('');
+  const avail = isAdmin() ? [...plots.filter(act), ...plots.filter(p => !act(p))] : myPlots();
+  if (!session) { el.innerHTML = '<div class="empty">Войдите, чтобы увидеть свой участок</div>'; return; }
+  if (!avail.length) { el.innerHTML = `<div class="empty">${isOwner() ? 'Ваш участок отключён администратором' : 'Нет участков'}</div>`; return; }
+  if (!avail.some(p => p.id === plState.id)) plState.id = avail[0].id;
+  const p = byId(plState.id), l = lastR(p), b = l ? Number(l.balance) : 0;
+  const all = monthly(p), months = plState.range ? all.slice(-plState.range) : all;
+  const sum = k => months.reduce((a, m) => a + m[k], 0);
+  const kwh = sum('kwh'), withKwh = months.filter(m => m.kwh > 0).length;
+  const sel = isAdmin() ? `<div class="pl-sel"><select id="pl-pick" onchange="plState.id=Number(this.value);renderPl()" aria-label="Участок">${avail.map(x => `<option value="${x.id}" ${x.id === p.id ? 'selected' : ''}>${esc(ownerOf(x))}${plotNo(x) ? ' · уч. ' + esc(plotNo(x)) : ''}${act(x) ? '' : ' (отключён)'}</option>`).join('')}</select></div>` : '';
+  const acts = canEdit(p) ? `<div class="pacts"><button class="btn btn-sm btn-p" onclick="go('add',${p.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn btn-sm" onclick="go('pay',${p.id})"><i class="ti ti-cash"></i> Пополнить</button></div>` : '';
+  const seg = `<div class="seg" role="tablist">${[[12, '12 мес'], [24, '2 года'], [0, 'Всё время']].map(([v, t]) => `<button class="${plState.range === v ? 'on' : ''}" onclick="plState.range=${v};renderPl()">${t}</button>`).join('')}</div>`;
+  const rows = months.slice().reverse().filter(m => m.kwh || m.cost || m.pay);
+  el.innerHTML = `${sel}
+  <div class="card"><div class="pl-head">
+    <div style="min-width:0"><div class="pname">${plotLabel(p)}${act(p) ? '' : ' <span class="badge berr">отключён</span>'}</div>
+      <div class="pmeta">${l ? 'Последнее показание ' + fmt(l.reading) + ' кВт·ч от ' + esc(l.date) : 'Записей пока нет'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
+    <div style="text-align:right"><div class="pmeta" style="margin:0">Баланс</div><div class="pl-bal ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div>
+  </div>${acts}</div>
+  ${all.length ? `${seg}
+  <div class="kpis"><div class="kpi"><div class="l">Расход</div><div class="v">${fmt(kwh)} кВт·ч</div></div><div class="kpi"><div class="l">Начислено</div><div class="v">${money(sum('cost'))}</div></div><div class="kpi"><div class="l">Оплачено</div><div class="v">${money(sum('pay'))}</div></div></div>
+  <div class="pmeta" style="margin:2px 0 12px">${withKwh ? 'В среднем ' + fmt(Math.round(kwh / withKwh)) + ' кВт·ч в месяц с показаниями' : ''}</div>
+  <div class="card"><div class="ct"><i class="ti ti-bolt"></i> Расход по месяцам, кВт·ч</div><div class="chart" id="pl-c1"></div>
+    <div class="pmeta" style="margin-top:6px">Расход относится к месяцу, когда переданы показания.</div></div>
+  <div class="card"><div class="ct"><i class="ti ti-cash"></i> Начислено и оплачено, ₸</div>
+    <div class="legend"><span><span class="sw" style="background:var(--c-cost)"></span>Начислено</span><span><span class="sw" style="background:var(--c-pay)"></span>Оплачено</span></div>
+    <div class="chart" id="pl-c2"></div></div>
+  <div class="card"><div class="ct"><i class="ti ti-calendar"></i> По месяцам</div>${rows.length ? `<div class="ow"><table class="mt"><thead><tr><th>Месяц</th><th class="tr">кВт·ч</th><th class="tr">Начислено</th><th class="tr">Оплачено</th><th class="tr">Баланс</th></tr></thead><tbody>${rows.map(m => `<tr><td class="tnw">${MON[m.m]} ${m.y}</td><td class="tr">${fmt(m.kwh)}</td><td class="tr">${fmt(Math.round(m.cost))}</td><td class="tr">${m.pay ? fmt(Math.round(m.pay)) : '—'}</td><td class="tr ${m.bal >= 0 ? 'pos' : 'neg'}">${fmt(Math.round(m.bal))}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">За этот период записей нет</div>'}</div>` : ''}
+  <div class="card"><details class="hist"><summary><i class="ti ti-list"></i> История записей <span class="pmeta" style="margin:0">(${recs(p).length})</span><i class="ti ti-chevron-down chev" style="margin-left:auto;color:var(--text3)"></i></summary><div style="margin-top:10px">${records(p)}</div></details></div>`;
+  if (all.length) drawPlCharts(months);
 }
+let plMonths = [];
+function drawPlCharts(months) {
+  plMonths = months || plMonths;
+  const c1 = $('pl-c1'), c2 = $('pl-c2'); if (!c1 || !c1.clientWidth) return;
+  drawBars(c1, plMonths, [{ key: 'kwh', label: 'Расход', color: 'var(--c-cost)' }], 'кВт·ч');
+  drawBars(c2, plMonths, [{ key: 'cost', label: 'Начислено', color: 'var(--c-cost)' }, { key: 'pay', label: 'Оплачено', color: 'var(--c-pay)' }], '₸');
+}
+{ let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => { if (current === 'pl') drawPlCharts(); }, 150); }); }
 function records(p) {
   const rs = recs(p).slice().reverse();
   if (!rs.length) return '<div class="empty">Нет записей</div>';
