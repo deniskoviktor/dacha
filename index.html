@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Учёт электроэнергии — Дача</title>
+<script>
+// Старый адрес на GitHub Pages: страница теперь работает с NAS — переводим туда
+if (/github\.io$/.test(location.hostname)) location.replace('https://dacha.82-115-48-98.sslip.io/');
+</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.9.0/dist/tabler-icons.min.css">
 <style>
 :root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e99;--border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--radius:8px;--radius-lg:12px;--green-bg:#eaf3de;--green:#3b6d11;--red-bg:#fcebeb;--red:#a32d2d;--amber-bg:#faeeda;--amber:#854f0b;--blue-bg:#e6f1fb;--blue:#185fa5}
@@ -241,7 +245,7 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 <script>
 // Адрес сервера на NAS (база PostgreSQL). Если страница открыта с самого NAS — используется он же.
 // Для страницы на GitHub Pages впишите сюда внешний HTTPS-адрес NAS, например 'https://dacha.example.ru/api'.
-const NAS_API_URL = '';
+const NAS_API_URL = 'https://dacha.82-115-48-98.sslip.io/api';
 const DEFAULT_API = /github\.io$/.test(location.hostname) || location.protocol === 'file:' ? NAS_API_URL : location.origin + '/api';
 
 let url     = localStorage.getItem('dacha_api') || DEFAULT_API;
