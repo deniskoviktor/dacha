@@ -2,7 +2,9 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#efefec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1e1e1c" media="(prefers-color-scheme: dark)">
 <title>Учёт электроэнергии — Дача</title>
 <script>
 // Старый адрес на GitHub Pages: страница теперь работает с NAS — переводим туда
@@ -10,84 +12,143 @@ if (/github\.io$/.test(location.hostname)) location.replace('https://dacha.82-11
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.9.0/dist/tabler-icons.min.css">
 <style>
-:root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e99;--border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--radius:8px;--radius-lg:12px;--green-bg:#eaf3de;--green:#3b6d11;--red-bg:#fcebeb;--red:#a32d2d;--amber-bg:#faeeda;--amber:#854f0b;--blue-bg:#e6f1fb;--blue:#185fa5}
-@media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2a2a28;--bg3:#333331;--text:#f0f0ec;--text2:#a0a09a;--text3:#6e6e68;--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);--green-bg:#173404;--green:#c0dd97;--red-bg:#501313;--red:#f7c1c1;--amber-bg:#412402;--amber:#fac775;--blue-bg:#042c53;--blue:#b5d4f4}}
+:root{--bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b66;--text3:#9e9e99;--border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);--r:10px;--rl:14px;--green-bg:#eaf3de;--green:#3b6d11;--red-bg:#fcebeb;--red:#a32d2d;--amber-bg:#faeeda;--amber:#854f0b;--blue-bg:#e6f1fb;--blue:#185fa5;--tabh:62px}
+@media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2a2a28;--bg3:#151514;--text:#f0f0ec;--text2:#a0a09a;--text3:#6e6e68;--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.22);--green-bg:#173404;--green:#c0dd97;--red-bg:#501313;--red:#f7c1c1;--amber-bg:#412402;--amber:#fac775;--blue-bg:#042c53;--blue:#b5d4f4}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;min-height:100vh}
-.shell{max-width:960px;margin:0 auto;padding:0 16px 40px}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;gap:8px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-icon{width:36px;height:36px;background:var(--text);border-radius:var(--radius);display:flex;align-items:center;justify-content:center}
-.logo-icon i{color:var(--bg);font-size:20px}
-.logo-title{font-size:17px;font-weight:600}
-.logo-sub{font-size:12px;color:var(--text2)}
-.hright{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg3);color:var(--text);font-size:15px;line-height:1.4;min-height:100vh}
+button{font-family:inherit;-webkit-tap-highlight-color:transparent}
+.shell{max-width:980px;margin:0 auto;padding:0 16px 40px}
+/* шапка */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.logo-icon{width:38px;height:38px;background:var(--text);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon i{color:var(--bg);font-size:21px}
+.logo-title{font-size:17px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dot{width:8px;height:8px;border-radius:50%;background:#888;flex-shrink:0}
 .dot.ok{background:#3b6d11}.dot.err{background:#a32d2d}.dot.spin{background:#ba7517;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.ibtn{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;font-size:12px;color:var(--text2);font-family:inherit}
-.ibtn:hover{background:var(--bg2);color:var(--text)}
-.ubadge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:var(--radius);font-size:12px;border:.5px solid var(--border)}
+.hright{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ibtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;min-width:38px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);cursor:pointer;font-size:14px;color:var(--text);text-decoration:none}
+.ibtn:active{transform:scale(.97)}
+.ibtn.icon{padding:0}
+.ubadge{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:var(--r);font-size:13px;border:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ubadge.admin{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
 .ubadge.owner{border-color:var(--green);background:var(--green-bg);color:var(--green)}
-nav{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.nb{padding:7px 14px;border:.5px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
-.nb:hover{background:var(--bg2);color:var(--text)}
-.nb.active{background:var(--bg);color:var(--text);border-color:var(--border2);font-weight:500}
-.page{display:none}.page.active{display:block}
-.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:14px}
-.ct{font-size:14px;font-weight:600;margin-bottom:12px}
+/* навигация: сверху на компьютере, снизу на телефоне */
+nav.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.nb{padding:9px 14px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text2);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.nb.active{background:var(--bg);color:var(--text);border-color:var(--border2);font-weight:600}
+.nb i{font-size:18px}
+.page{display:none}.page.active{display:block;animation:fade .15s}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:14px}
+.ct{font-size:16px;font-weight:650;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sub{font-size:14px;color:var(--text2);margin-bottom:14px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:600px){.g2{grid-template-columns:1fr}}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
-.met{background:var(--bg2);border-radius:var(--radius);padding:12px 14px}
-.ml{font-size:11px;color:var(--text2);margin-bottom:4px}
-.mv{font-size:22px;font-weight:600;line-height:1.1}
-.mu{font-size:12px;color:var(--text2);margin-left:2px;font-weight:400}
-.ow{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-weight:500;font-size:11px;color:var(--text2);padding:6px 8px;border-bottom:.5px solid var(--border);white-space:nowrap}
-td{padding:7px 8px;border-bottom:.5px solid var(--border)}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.met{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.met.warn{border-color:var(--red)}
+.ml{font-size:12px;color:var(--text2);margin-bottom:4px}
+.mv{font-size:22px;font-weight:650;line-height:1.1}
+.mu{font-size:13px;color:var(--text2);margin-left:2px;font-weight:400}
+/* мой участок */
+.mine{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mine .bal{font-size:30px;font-weight:700;line-height:1.1}
+.mine .meta{font-size:13px;color:var(--text2);margin-top:4px}
+.mine .acts{display:flex;gap:8px;flex-wrap:wrap}
+/* таблицы и списки */
+.ow{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;font-size:12px;color:var(--text2);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:top}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--bg2)}
 .tr{text-align:right}.tnw{white-space:nowrap}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.fg label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px}
-input,select{font-family:inherit;font-size:13px;width:100%;background:var(--bg);color:var(--text);border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 10px;outline:none;transition:border-color .15s}
-input:focus,select:focus{border-color:var(--text2)}
-input[readonly]{background:var(--bg2);color:var(--text2)}
-.btn{padding:8px 15px;border:.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
-.btn:hover{background:var(--bg2)}.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-p{background:var(--text);color:var(--bg);border-color:transparent}.btn-p:hover{opacity:.85}
-.btn-sm{padding:4px 10px;font-size:12px}
-.badge{display:inline-block;padding:2px 8px;border-radius:var(--radius);font-size:11px;font-weight:500}
-.bok{background:var(--green-bg);color:var(--green)}.berr{background:var(--red-bg);color:var(--red)}
-.pos{color:var(--green);font-weight:500}.neg{color:var(--red);font-weight:500}
-.msg{padding:8px 12px;border-radius:var(--radius);font-size:13px;margin-top:10px}
-.mok{background:var(--green-bg);color:var(--green)}.merr{background:var(--red-bg);color:var(--red)}
-.pc{border:.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:10px;cursor:pointer}
-.pc:hover{border-color:var(--border2);background:var(--bg2)}.pc.open{border-color:var(--border2)}
-.pch{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.pname{font-weight:600;font-size:14px}.pmeta{font-size:12px;color:var(--text2);margin-top:2px}
-.pd{margin-top:12px;border-top:.5px solid var(--border);padding-top:12px;display:none}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 2px;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row .nm{font-weight:550;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.row .sm{font-size:12px;color:var(--text2);margin-top:2px}
+.amt{font-weight:650;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:550;white-space:nowrap}
+.bok{background:var(--green-bg);color:var(--green)}.berr{background:var(--red-bg);color:var(--red)}.bwarn{background:var(--amber-bg);color:var(--amber)}
+/* участки */
+.pc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
+.pch{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;width:100%;background:none;border:0;color:inherit;text-align:left;font-size:inherit}
+.pname{font-weight:650;font-size:15px}.pmeta{font-size:13px;color:var(--text2);margin-top:2px}
+.pd{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
 .pc.open .pd{display:block}
-.prev-box{background:var(--bg2);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.7}
-.info-box{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:2}
-.loading{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px}
-.divider{height:.5px;background:var(--border);margin:12px 0}
-/* MODAL */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center}
+.pc .chev{transition:transform .15s;color:var(--text3)}.pc.open .chev{transform:rotate(180deg)}
+.pacts{display:flex;gap:8px;margin:12px 0 4px;flex-wrap:wrap}
+.recs-m{display:none}
+.rc{border-bottom:1px solid var(--border);padding:10px 0}
+.rc:last-child{border-bottom:none}
+.rc-h{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.rc-g{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13px;color:var(--text2);margin-top:4px}
+.rc-g b{color:var(--text);font-weight:550}
+.rc-n{font-size:12px;color:var(--text2);margin-top:4px;word-break:break-word}
+/* формы */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:12px}
+.fg label{display:block;font-size:13px;color:var(--text2);margin-bottom:4px}
+.fg .hint{font-size:12px;color:var(--text3);margin-top:3px}
+.req{color:var(--red)}
+input,select{font-family:inherit;font-size:16px;width:100%;min-height:44px;background:var(--bg);color:var(--text);border:1px solid var(--border2);border-radius:var(--r);padding:9px 12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--text2) 50%),linear-gradient(135deg,var(--text2) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:32px}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg)}
+input[readonly]{background:var(--bg2);color:var(--text2)}
+input.bad{border-color:var(--red)}
+.btn{min-height:46px;padding:0 18px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:550}
+.btn:active{transform:scale(.98)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--text);color:var(--bg);border-color:transparent}
+.btn-sm{min-height:38px;padding:0 12px;font-size:14px}
+.btn-block{width:100%}
+.plot-fixed{font-size:16px;font-weight:650;padding:10px 12px;background:var(--bg2);border-radius:var(--r)}
+.preview{background:var(--bg2);border-radius:var(--r);padding:12px 14px;margin:4px 0 14px;font-size:14px}
+.preview .pv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.preview .pl{font-size:12px;color:var(--text2)}
+.preview .pn{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+.msg{padding:10px 12px;border-radius:var(--r);font-size:14px;margin-top:10px}
+.mok{background:var(--green-bg);color:var(--green)}.merr{background:var(--red-bg);color:var(--red)}
+.loading,.empty{text-align:center;padding:2rem 1rem;color:var(--text2);font-size:14px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+/* вход */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
 .overlay.hidden{display:none}
-.modal{background:var(--bg);border-radius:var(--radius-lg);padding:28px 32px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
-.modal-title{font-size:16px;font-weight:600;margin-bottom:6px}
-.modal-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.pin-inp{font-size:28px;letter-spacing:8px;text-align:center;padding:12px;font-weight:600}
-/* PWD TABLE */
-.pwd-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:.5px solid var(--border)}
+.modal{background:var(--bg);border-radius:var(--rl);padding:24px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.modal-title{font-size:18px;font-weight:650;margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--text2);margin-bottom:16px}
+.pin-inp{font-size:28px;letter-spacing:10px;text-align:center;font-weight:650;min-height:58px}
+/* коды */
+.pwd-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
 .pwd-row:last-child{border-bottom:none}
-.pwd-code{font-family:monospace;font-size:16px;font-weight:600;letter-spacing:3px;background:var(--bg2);padding:3px 10px;border-radius:var(--radius)}
-@media(max-width:480px){.shell{padding:0 10px 30px}.metrics{grid-template-columns:1fr 1fr}.fgrid{grid-template-columns:1fr 1fr}}
+.pwd-code{font-family:ui-monospace,monospace;font-size:17px;font-weight:650;letter-spacing:3px;background:var(--bg2);padding:4px 10px;border-radius:var(--r)}
+/* уведомление */
+.toast{position:fixed;left:50%;top:16px;transform:translateX(-50%) translateY(-160%);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:var(--r);font-size:15px;z-index:200;transition:transform .25s;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}
+@media(max-width:820px){.metrics{grid-template-columns:repeat(3,1fr)}}
+/* телефон */
+@media(max-width:640px){
+  .shell{padding:0 12px calc(var(--tabh) + 24px + env(safe-area-inset-bottom))}
+  header{position:sticky;top:0;z-index:20;background:var(--bg3);padding:10px 0 8px}
+  .logo-title{font-size:16px}.logo-icon{width:34px;height:34px}
+  #btn-login span{display:none}#btn-login{padding:0;min-width:38px}
+  .hide-m{display:none!important}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;gap:0;flex-wrap:nowrap;background:var(--bg);border-top:1px solid var(--border);padding:4px 4px env(safe-area-inset-bottom);height:calc(var(--tabh) + env(safe-area-inset-bottom))}
+  .nb{flex:1;flex-direction:column;gap:2px;border:0;border-radius:var(--r);padding:6px 2px;font-size:11px;min-width:0}
+  .nb i{font-size:22px}
+  .nb.active{background:var(--bg2)}
+  .g2{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .metrics .met:last-child{grid-column:span 2}
+  .card{padding:14px}
+  .fgrid{grid-template-columns:1fr 1fr;gap:10px}
+  .fgrid .wide{grid-column:span 2}
+  .recs-d{display:none}.recs-m{display:block}
+  .mine .acts{width:100%}.mine .acts .btn{flex:1}
+  .toast{top:calc(10px + env(safe-area-inset-top))}
+}
 </style>
 </head>
 <body>
@@ -96,66 +157,62 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 <header>
   <div class="logo">
     <div class="logo-icon"><i class="ti ti-bolt"></i></div>
-    <div><div class="logo-title">Учёт электроэнергии</div><div class="logo-sub">Дачное сообщество</div></div>
+    <div style="min-width:0"><div class="logo-title">Учёт электроэнергии</div><div class="status"><span class="dot spin" id="sd"></span><span id="st">Подключение…</span></div></div>
   </div>
   <div class="hright">
-    <div class="status"><div class="dot spin" id="sd"></div><span id="st">Подключение...</span></div>
-    <div id="ubadge" class="ubadge" style="display:none"></div>
-    <button class="ibtn" id="btn-login" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
-    <button class="ibtn" id="btn-logout" onclick="logout()" style="display:none"><i class="ti ti-logout"></i> Выйти</button>
-    <button class="ibtn" onclick="load()"><i class="ti ti-refresh"></i></button>
-    <a href="instrukciya_polzovatelya.pdf" download class="ibtn" title="Скачать инструкцию"><i class="ti ti-file-description"></i> Инструкция</a>
+    <span id="ubadge" class="ubadge hide-m" style="display:none"></span>
+    <button class="ibtn" id="btn-login" onclick="openLogin()"><i class="ti ti-lock"></i><span>Войти</span></button>
+    <button class="ibtn icon" id="btn-logout" onclick="logout()" style="display:none" title="Выйти" aria-label="Выйти"><i class="ti ti-logout"></i></button>
+    <button class="ibtn icon" onclick="load()" title="Обновить" aria-label="Обновить"><i class="ti ti-refresh"></i></button>
+    <a href="instrukciya_polzovatelya.pdf" download class="ibtn icon" title="Инструкция" aria-label="Инструкция"><i class="ti ti-file-description"></i></a>
   </div>
 </header>
 
-<nav>
-  <button class="nb active" onclick="go('ov')"><i class="ti ti-layout-dashboard"></i> Сводка</button>
-  <button class="nb" onclick="go('pl')"><i class="ti ti-home"></i> Участки</button>
-  <button class="nb" onclick="go('add')"><i class="ti ti-plus"></i> Запись</button>
-  <button class="nb" onclick="go('pay')"><i class="ti ti-cash"></i> Оплата</button>
-  <button class="nb" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i> Пароли</button>
-  <button class="nb" id="nav-cfg" style="display:none" onclick="go('cfg')"><i class="ti ti-settings"></i> Настройки</button>
+<nav class="tabs" id="tabs">
+  <button class="nb active" data-p="ov" onclick="go('ov')"><i class="ti ti-layout-dashboard"></i><span>Сводка</span></button>
+  <button class="nb" data-p="pl" onclick="go('pl')"><i class="ti ti-home"></i><span>Участки</span></button>
+  <button class="nb" data-p="add" onclick="go('add')"><i class="ti ti-gauge"></i><span>Показания</span></button>
+  <button class="nb" data-p="pay" onclick="go('pay')"><i class="ti ti-cash"></i><span>Оплата</span></button>
+  <button class="nb" data-p="pwd" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i><span>Коды</span></button>
+  <button class="nb" data-p="cfg" id="nav-cfg" style="display:none" onclick="go('cfg')"><i class="ti ti-settings"></i><span>Настройки</span></button>
 </nav>
 
 <!-- СВОДКА -->
 <div id="pg-ov" class="page active">
-  <div class="metrics" id="ov-m"><div class="met"><div class="ml">Загрузка</div><div class="mv">...</div></div></div>
+  <div id="ov-mine"></div>
+  <div class="metrics" id="ov-m"><div class="met"><div class="ml">Загрузка</div><div class="mv">…</div></div></div>
   <div class="g2">
-    <div class="card"><div class="ct">Долги / переплаты</div><div id="ov-d"><div class="loading">Загрузка...</div></div></div>
-    <div class="card"><div class="ct">Последние записи</div><div id="ov-r"><div class="loading">Загрузка...</div></div></div>
+    <div class="card"><div class="ct"><i class="ti ti-scale"></i> Балансы участков</div><div id="ov-d"><div class="loading">Загрузка…</div></div></div>
+    <div class="card"><div class="ct"><i class="ti ti-clock"></i> Последние записи</div><div id="ov-r"><div class="loading">Загрузка…</div></div></div>
   </div>
 </div>
 
 <!-- УЧАСТКИ -->
 <div id="pg-pl" class="page">
-  <div id="pl-list"><div class="loading">Загрузка...</div></div>
+  <div id="pl-list"><div class="loading">Загрузка…</div></div>
 </div>
 
-<!-- ЗАПИСЬ -->
+<!-- ПОКАЗАНИЯ -->
 <div id="pg-add" class="page">
   <div id="add-prompt" class="card" style="display:none">
-    <div class="ct"><i class="ti ti-lock"></i> Требуется вход</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Введите ваш 4-значный код для добавления показаний.</p>
-    <button class="btn btn-p" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
+    <div class="ct"><i class="ti ti-lock"></i> Нужен вход</div>
+    <p class="sub">Введите ваш 4-значный код, чтобы внести показания своего участка.</p>
+    <button class="btn btn-p btn-block" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
   </div>
   <div id="add-form" class="card" style="display:none">
-    <div class="ct">Новая запись показаний</div>
+    <div class="ct"><i class="ti ti-gauge"></i> Новые показания счётчика</div>
+    <div class="fg" style="margin-bottom:12px"><label>Участок</label><div id="a-plot-wrap"></div></div>
     <div class="fgrid">
-      <div class="fg" style="grid-column:span 2"><label>Участок</label><select id="a-plot" onchange="fillPrev()"></select></div>
+      <div class="fg wide"><label for="a-read">Показание счётчика, кВт·ч <span class="req">*</span></label><input type="number" id="a-read" inputmode="decimal" placeholder="например, 15700" min="0" step="any" oninput="calcAdd()"><div class="hint" id="a-prev-hint"></div></div>
+      <div class="fg"><label for="a-date">Дата</label><input type="date" id="a-date" onchange="calcAdd()"></div>
+      <div class="fg"><label for="a-topup">Оплата сейчас, ₸</label><input type="number" id="a-topup" inputmode="decimal" placeholder="0 — без оплаты" min="0" step="any" oninput="calcAdd()"></div>
+      <div class="fg admin-only"><label for="a-prev">Предыдущее показание</label><input type="number" id="a-prev" inputmode="decimal" min="0" step="any" oninput="calcAdd()"></div>
+      <div class="fg admin-only"><label for="a-price">Цена за кВт·ч, ₸</label><input type="number" id="a-price" inputmode="decimal" min="0" step="0.01" oninput="calcAdd()"></div>
+      <div class="fg"><label for="a-chk">Номер чека</label><input type="text" id="a-chk" placeholder="необязательно" maxlength="60"></div>
+      <div class="fg"><label for="a-note">Примечание</label><input type="text" id="a-note" placeholder="необязательно" maxlength="200"></div>
     </div>
-    <div class="fgrid">
-      <div class="fg"><label>Дата</label><input type="date" id="a-date"></div>
-      <div class="fg"><label>Новое показание (кВт·ч) <span style="color:var(--red)">*</span></label><input type="number" id="a-read" placeholder="напр. 15700" min="0" oninput="calcAdd()"></div>
-      <div class="fg"><label>Предыдущее показание</label><input type="number" id="a-prev" placeholder="авто" min="0" oninput="calcAdd()"></div>
-      <div class="fg"><label>Расход (кВт·ч)</label><input type="number" id="a-cons" readonly placeholder="авто"></div>
-      <div class="fg"><label>Цена за кВт·ч (₸)</label><input type="number" id="a-price" step="0.01" oninput="calcAdd()"></div>
-      <div class="fg"><label>Пополнение (₸) <span style="color:var(--red)">*</span></label><input type="number" id="a-topup" placeholder="0" min="0" oninput="calcAdd()"></div>
-      <div class="fg"><label>Баланс до (₸)</label><input type="number" id="a-bb" readonly placeholder="авто"></div>
-      <div class="fg"><label>Номер чека</label><input type="text" id="a-chk" placeholder="№..."></div>
-    </div>
-    <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="a-note" placeholder="необязательно"></div>
-    <div class="prev-box" id="a-preview">Выберите участок и введите показание</div>
-    <button class="btn btn-p" id="a-btn" onclick="submitAdd()"><i class="ti ti-device-floppy"></i> Сохранить</button>
+    <div class="preview" id="a-preview">Введите показание — расход, стоимость и новый баланс посчитаются сами</div>
+    <button class="btn btn-p btn-block" id="a-btn" onclick="submitAdd()"><i class="ti ti-device-floppy"></i> Сохранить показания</button>
     <div id="a-msg"></div>
   </div>
 </div>
@@ -163,473 +220,436 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 <!-- ОПЛАТА -->
 <div id="pg-pay" class="page">
   <div id="pay-prompt" class="card" style="display:none">
-    <div class="ct"><i class="ti ti-lock"></i> Требуется вход</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Введите ваш 4-значный код для внесения оплаты.</p>
-    <button class="btn btn-p" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
+    <div class="ct"><i class="ti ti-lock"></i> Нужен вход</div>
+    <p class="sub">Введите ваш 4-значный код, чтобы внести оплату по своему участку.</p>
+    <button class="btn btn-p btn-block" onclick="openLogin()"><i class="ti ti-lock"></i> Войти</button>
   </div>
   <div id="pay-form" class="card" style="display:none">
-    <div class="ct">Внести оплату к последней записи</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Выберите участок — подтянется последняя запись. Сумма добавится к текущему пополнению.</p>
+    <div class="ct"><i class="ti ti-cash"></i> Пополнение баланса</div>
+    <p class="sub">Сумма добавится к оплате в последней записи участка.</p>
+    <div class="fg" style="margin-bottom:12px"><label>Участок</label><div id="pay-plot-wrap"></div></div>
+    <div class="preview" id="pay-info">Выберите участок</div>
     <div class="fgrid">
-      <div class="fg" style="grid-column:span 2"><label>Участок</label><select id="pay-plot" onchange="fillPayInfo()"></select></div>
+      <div class="fg wide"><label for="pay-amount">Сумма пополнения, ₸ <span class="req">*</span></label><input type="number" id="pay-amount" inputmode="decimal" placeholder="больше 0" min="1" step="any" oninput="calcPay()"></div>
+      <div class="fg"><label for="pay-chk">Номер чека</label><input type="text" id="pay-chk" placeholder="необязательно" maxlength="60"></div>
+      <div class="fg"><label for="pay-note">Примечание</label><input type="text" id="pay-note" placeholder="необязательно" maxlength="200"></div>
     </div>
-    <div class="info-box" id="pay-info">Выберите участок</div>
-    <div class="fgrid">
-      <div class="fg"><label>Добавить сумму (₸)</label><input type="number" id="pay-amount" placeholder="0" min="1" oninput="calcPay()"></div>
-      <div class="fg"><label>Номер чека</label><input type="text" id="pay-chk" placeholder="№..."></div>
-    </div>
-    <div class="fg" style="margin-bottom:12px"><label>Примечание</label><input type="text" id="pay-note" placeholder="необязательно"></div>
-    <div class="prev-box" id="pay-preview">Введите сумму для расчёта нового баланса</div>
-    <button class="btn btn-p" id="pay-btn" onclick="submitPay()"><i class="ti ti-cash"></i> Сохранить оплату</button>
+    <div class="preview" id="pay-preview">Введите сумму — новый баланс посчитается сам</div>
+    <button class="btn btn-p btn-block" id="pay-btn" onclick="submitPay()"><i class="ti ti-cash"></i> Сохранить оплату</button>
     <div id="pay-msg"></div>
   </div>
 </div>
 
-<!-- ПАРОЛИ -->
+<!-- КОДЫ (администратор) -->
 <div id="pg-pwd" class="page">
   <div class="card">
-    <div class="ct">Пароли участников</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Выдайте каждому владельцу его 4-значный код — он вводится для добавления записей и оплаты по своему участку.</p>
+    <div class="ct"><i class="ti ti-key"></i> Коды владельцев</div>
+    <p class="sub">Каждому владельцу — свой 4-значный код: с ним он вносит показания и оплату только по своему участку.</p>
     <div id="pwd-list"></div>
     <div class="divider"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-p" onclick="genPwd()"><i class="ti ti-refresh"></i> Сгенерировать новые</button>
-      <button class="btn" id="btn-save-pwd" style="display:none" onclick="savePwd()"><i class="ti ti-device-floppy"></i> Сохранить в базу</button>
+      <button class="btn" onclick="genPwd()"><i class="ti ti-refresh"></i> Сгенерировать новые</button>
+      <button class="btn btn-p" id="btn-save-pwd" style="display:none" onclick="savePwd()"><i class="ti ti-device-floppy"></i> Сохранить коды</button>
+      <button class="btn" id="btn-cancel-pwd" style="display:none" onclick="cancelPwd()">Отмена</button>
     </div>
     <div id="pwd-msg"></div>
   </div>
 </div>
 
-<!-- НАСТРОЙКИ -->
+<!-- НАСТРОЙКИ (администратор) -->
 <div id="pg-cfg" class="page">
   <div class="card">
-    <div class="ct">Тариф</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Цена за кВт·ч по умолчанию для всех участников.</p>
-    <div class="fgrid" style="max-width:320px">
-      <div class="fg"><label>Тариф (₸ за кВт·ч)</label><input type="number" id="cfg-tariff" step="0.01" min="0" placeholder="36"></div>
-    </div>
+    <div class="ct"><i class="ti ti-receipt"></i> Тариф</div>
+    <p class="sub">Цена за кВт·ч для новых показаний.</p>
+    <div class="fgrid" style="max-width:360px"><div class="fg wide"><label for="cfg-tariff">Тариф, ₸ за кВт·ч</label><input type="number" id="cfg-tariff" inputmode="decimal" step="0.01" min="0" placeholder="36"></div></div>
     <button class="btn btn-p" onclick="saveTariff()"><i class="ti ti-check"></i> Сохранить тариф</button>
     <div id="tariff-msg"></div>
   </div>
   <div class="card">
-    <div class="ct">Подключение к серверу (NAS)</div>
-    <div class="fg" style="margin-bottom:10px"><label>Адрес API</label><input type="text" id="cfg-url" placeholder="https://dacha.example.ru/api"></div>
-    <button class="btn btn-p" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить</button>
+    <div class="ct"><i class="ti ti-server"></i> Сервер</div>
+    <p class="sub">Данные хранятся в базе PostgreSQL на NAS. Менять адрес нужно, только если страница открыта не с самого NAS.</p>
+    <div class="fg" style="margin-bottom:10px"><label for="cfg-url">Адрес API</label><input type="text" id="cfg-url" placeholder="https://…/api" autocapitalize="off" autocomplete="off"></div>
+    <button class="btn" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить адрес</button>
     <div id="cfg-msg"></div>
-    <div class="divider"></div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.7">Данные хранятся в базе PostgreSQL на NAS. Оставьте поле пустым и сохраните, чтобы вернуть адрес по умолчанию.</div>
-  </div>
-  <div class="card">
-    <div class="ct">Данные</div>
-    <button class="btn" onclick="load()"><i class="ti ti-refresh"></i> Перезагрузить данные</button>
   </div>
 </div>
 
-<!-- LOGIN MODAL -->
-<div class="overlay hidden" id="overlay" onclick="closeOuter(event)">
-  <div class="modal">
-    <div class="modal-title"><i class="ti ti-lock"></i> Вход</div>
-    <div class="modal-sub">Введите ваш 4-значный код или пароль администратора</div>
-    <div class="fg" style="margin-bottom:14px">
-      <input type="password" class="pin-inp" id="pin" maxlength="10" placeholder="····" oninput="clearErr()" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-p" style="flex:1" onclick="doLogin()"><i class="ti ti-login"></i> Войти</button>
+<!-- ВХОД -->
+<div class="overlay hidden" id="overlay" onclick="if(event.target===this)closeLogin()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lg-t">
+    <div class="modal-title" id="lg-t"><i class="ti ti-lock"></i> Вход</div>
+    <div class="modal-sub">Ваш 4-значный код или пароль администратора</div>
+    <input type="password" class="pin-inp" id="pin" inputmode="numeric" autocomplete="current-password" maxlength="20" placeholder="····" oninput="document.getElementById('login-err').innerHTML=''" onkeydown="if(event.key==='Enter')doLogin()">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-p" style="flex:1" id="login-btn" onclick="doLogin()"><i class="ti ti-login"></i> Войти</button>
       <button class="btn" onclick="closeLogin()">Отмена</button>
     </div>
     <div id="login-err"></div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
 </div><!-- .shell -->
 <script>
-// Адрес сервера на NAS (база PostgreSQL). Если страница открыта с самого NAS — используется он же.
-// Для страницы на GitHub Pages впишите сюда внешний HTTPS-адрес NAS, например 'https://dacha.example.ru/api'.
+// Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
 const NAS_API_URL = 'https://dacha.82-115-48-98.sslip.io/api';
 const DEFAULT_API = /github\.io$/.test(location.hostname) || location.protocol === 'file:' ? NAS_API_URL : location.origin + '/api';
 
-let url     = localStorage.getItem('dacha_api') || DEFAULT_API;
-let plots   = [], busy = false, tariff = 36;
-let session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null');
-if (session && !session.token) session = null; // старая сессия без токена
-let pendingPwd = null;
+let url = localStorage.getItem('dacha_api') || DEFAULT_API;
+let plots = [], busy = false, tariff = 36, pendingPwd = null;
+let session = null;
+try { session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null'); } catch { session = null; }
+// старая сессия без токена или без номера участка — войти заново
+if (session && (!session.token || (session.role === 'owner' && !session.plotId))) session = null;
 
-/* ─── запросы к серверу ─── */
-async function apiGet(action, params={}) {
-  const q = new URLSearchParams({action, ...params});
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const fmt = n => Number(n || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+const money = n => fmt(Math.round(Number(n) || 0)) + ' ₸';
+const num = v => { const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : NaN; };
+const setS = (s, t) => { $('sd').className = 'dot ' + s; $('st').textContent = t; };
+const msg = (el, ok, text) => { $(el).innerHTML = `<div class="msg ${ok ? 'mok' : 'merr'}">${esc(text)}</div>`; };
+let toastT;
+function toast(text, err) { const t = $('toast'); t.textContent = text; t.className = 'toast show' + (err ? ' err' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', 3200); }
+
+/* ─── запросы ─── */
+async function apiGet(action, params = {}) {
+  const q = new URLSearchParams({ action, ...params });
   if (session?.token) q.set('token', session.token);
-  const r = await fetch(url+'?'+q.toString());
+  const r = await fetch(url + '?' + q);
+  if (!r.ok) throw new Error('сервер ответил ' + r.status);
   return r.json();
 }
 async function apiPost(body) {
-  const r = await fetch(url, {method:'POST', body:JSON.stringify({...body, token:session?.token})});
+  const r = await fetch(url, { method: 'POST', body: JSON.stringify({ ...body, token: session?.token }) });
+  if (!r.ok) throw new Error('сервер ответил ' + r.status);
   const d = await r.json();
-  if (d.error === 'Требуется вход') { session=null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
+  if (d.error === 'Требуется вход') { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
   return d;
 }
 
-/* ─── utils ─── */
-const fmt = n => Number(n).toLocaleString('ru-RU');
-const setS = (s,t) => { document.getElementById('sd').className='dot '+s; document.getElementById('st').textContent=t; };
-
+/* ─── даты ─── */
 function normDate(str) {
   if (!str) return '';
-  str = str.toString().trim();
+  str = String(str).trim();
   if (/^\d{2}\.\d{2}\.\d{4}$/.test(str)) return str;
-  let m;
-  m = str.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/);
-  if (m) return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.20'+m[3];
-  m = str.match(/^(\d{1,2})[.,](\d{1,2})[.,](\d{2,4})$/);
-  if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
-  m = str.match(/^(\d{2})(\d{2})(\d{4})$/);
-  if (m) return m[1]+'.'+m[2]+'.'+m[3];
-  m = str.match(/^(\d{1,2})\.(\d{2})(\d{4})$/);
-  if (m) return m[1].padStart(2,'0')+'.'+m[2]+'.'+m[3];
-  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (m) { const y=m[3].length===2?'20'+m[3]:m[3]; return m[1].padStart(2,'0')+'.'+m[2].padStart(2,'0')+'.'+y; }
+  let m = str.match(/^(\d{1,2})[.,/\-](\d{1,2})[.,/\-](\d{2,4})$/);
+  if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return m[1].padStart(2, '0') + '.' + m[2].padStart(2, '0') + '.' + y; }
   return str;
 }
-function pDate(s) { const n=normDate(s); const m=n.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m?new Date(m[3],m[2]-1,m[1]):new Date(0); }
-function sName(n) { return n.replace(/\(.*?\)/g,'').replace(/уч\.?\s*\d+/i,'').trim(); }
-function isReal(r) { return !!(r.date&&(r.reading>0||r.consumption>0||r.topup>0||r.cost>0)); }
-function recs(p)   { return (p.records||[]).filter(isReal); }
-function lastR(p)  { const rr=recs(p); return rr.length?rr[rr.length-1]:null; }
-function normPlots(ps) { ps.forEach(p=>(p.records||[]).forEach(r=>{r.date=normDate(r.date);})); return ps; }
+function pDate(s) { const m = normDate(s).match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return m ? new Date(m[3], m[2] - 1, m[1]) : new Date(0); }
+function localIso(d = new Date()) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+const isoToRu = iso => iso.split('-').reverse().join('.');
+const monthsSince = s => (Date.now() - pDate(s)) / (1000 * 60 * 60 * 24 * 30.4);
 
-/* ─── auth ─── */
-const isAdmin = () => session?.role==='admin';
-const isOwner = () => session?.role==='owner';
-const canEdit = name => isAdmin()||(isOwner()&&session.plotName===name);
+/* ─── участки и записи ─── */
+function shortName(n) { return String(n || '').replace(/\(.*?\)/g, '').replace(/уч\.?\s*\d+/i, '').trim(); }
+function plotNo(n) { const m = String(n || '').match(/уч\.?\s*(\d+)/i); return m ? m[1] : ''; }
+function isReal(r) { return !!(r.date && (r.reading > 0 || r.consumption > 0 || r.topup > 0 || r.cost > 0)); }
+const recs = p => (p.records || []).filter(isReal);
+const lastR = p => { const rr = recs(p); return rr.length ? rr[rr.length - 1] : null; };
+const byId = id => plots.find(p => p.id === Number(id));
+const isAdmin = () => session?.role === 'admin';
+const isOwner = () => session?.role === 'owner';
+const canEdit = p => !!p && (isAdmin() || (isOwner() && session.plotId === p.id));
+const myPlots = () => isAdmin() ? plots : plots.filter(p => isOwner() && p.id === session.plotId);
+function stale(p) { const l = lastR(p); if (!l) return false; const y = pDate(l.date).getFullYear(); return y > 2023 && monthsSince(l.date) > 2; }
+const plotLabel = p => esc(shortName(p.name)) + (plotNo(p.name) ? ` <span style="color:var(--text2);font-weight:400">· уч. ${esc(plotNo(p.name))}</span>` : '');
 
+/* ─── вход ─── */
 function updateUI() {
-  const badge=document.getElementById('ubadge');
-  document.getElementById('btn-login').style.display  = session?'none':'';
-  document.getElementById('btn-logout').style.display = session?'':'none';
-  document.getElementById('nav-pwd').style.display    = isAdmin()?'':'none';
-  document.getElementById('nav-cfg').style.display    = isAdmin()?'':'none';
+  const b = $('ubadge');
+  $('btn-login').style.display = session ? 'none' : '';
+  $('btn-logout').style.display = session ? '' : 'none';
+  $('nav-pwd').style.display = isAdmin() ? '' : 'none';
+  $('nav-cfg').style.display = isAdmin() ? '' : 'none';
   if (session) {
-    badge.style.display='';
-    if (isAdmin()) { badge.className='ubadge admin'; badge.innerHTML='<i class="ti ti-shield"></i> Администратор'; }
-    else           { badge.className='ubadge owner'; badge.innerHTML='<i class="ti ti-user"></i> '+sName(session.plotName); }
-  } else { badge.style.display='none'; }
+    b.style.display = '';
+    if (isAdmin()) { b.className = 'ubadge admin hide-m'; b.innerHTML = '<i class="ti ti-shield"></i> Администратор'; }
+    else { b.className = 'ubadge owner hide-m'; b.innerHTML = '<i class="ti ti-user"></i> ' + esc(shortName(session.plotName)); }
+  } else b.style.display = 'none';
 }
-
-function openLogin()  { document.getElementById('overlay').classList.remove('hidden'); document.getElementById('pin').value=''; document.getElementById('login-err').innerHTML=''; setTimeout(()=>document.getElementById('pin').focus(),100); }
-function closeLogin() { document.getElementById('overlay').classList.add('hidden'); }
-function closeOuter(e){ if(e.target===document.getElementById('overlay')) closeLogin(); }
-function clearErr()   { document.getElementById('login-err').innerHTML=''; }
-
+function openLogin() { $('overlay').classList.remove('hidden'); $('pin').value = ''; $('login-err').innerHTML = ''; setTimeout(() => $('pin').focus(), 50); }
+function closeLogin() { $('overlay').classList.add('hidden'); }
 async function doLogin() {
-  const pin = document.getElementById('pin').value.trim();
+  const pin = $('pin').value.trim();
   if (!pin) return;
+  const btn = $('login-btn'); btn.disabled = true;
   try {
-    const d = await apiPost({action:'checkPassword', password:pin});
-    if (d.ok && (d.role==='owner' || d.role==='admin')) {
-      session = d.role==='admin' ? {role:'admin', token:d.token} : {role:'owner', plotName:d.plotName, token:d.token};
+    const d = await apiPost({ action: 'checkPassword', password: pin });
+    if (d.ok && (d.role === 'owner' || d.role === 'admin')) {
+      session = d.role === 'admin' ? { role: 'admin', token: d.token } : { role: 'owner', plotId: d.plotId, plotName: d.plotName, token: d.token };
       sessionStorage.setItem('dacha_sess', JSON.stringify(session));
-      closeLogin(); updateUI(); renderAdd(); renderPayPage();
-      if (d.role==='admin') load(); // подтянуть коды участников
-    } else {
-      document.getElementById('login-err').innerHTML='<div class="msg merr">'+(d.error||'Неверный код')+'</div>';
-    }
-  } catch(e) { document.getElementById('login-err').innerHTML='<div class="msg merr">Ошибка соединения</div>'; }
+      closeLogin(); updateUI();
+      toast(isAdmin() ? 'Вы вошли как администратор' : 'Здравствуйте! Участок: ' + shortName(d.plotName));
+      await load(true);
+      go('ov');
+    } else $('login-err').innerHTML = `<div class="msg merr">${esc(d.error || 'Неверный код')}</div>`;
+  } catch (e) { $('login-err').innerHTML = '<div class="msg merr">Нет связи с сервером</div>'; }
+  btn.disabled = false;
+}
+function logout() { session = null; sessionStorage.removeItem('dacha_sess'); pendingPwd = null; updateUI(); load(true); go('ov'); }
+
+/* ─── навигация ─── */
+const PAGES = ['ov', 'pl', 'add', 'pay', 'pwd', 'cfg'];
+let current = 'ov';
+function go(id, plotId) {
+  if ((id === 'pwd' || id === 'cfg') && !isAdmin()) id = 'ov';
+  current = id;
+  PAGES.forEach(p => $('pg-' + p).classList.toggle('active', p === id));
+  document.querySelectorAll('.nb').forEach(b => b.classList.toggle('active', b.dataset.p === id));
+  render(id, plotId);
+  window.scrollTo({ top: 0 });
+}
+function render(id = current, plotId) {
+  if (id === 'ov') renderOv();
+  if (id === 'pl') renderPl();
+  if (id === 'add') renderAdd(plotId);
+  if (id === 'pay') renderPay(plotId);
+  if (id === 'pwd') renderPwd();
+  if (id === 'cfg') { $('cfg-url').value = url; $('cfg-tariff').value = tariff; }
 }
 
-function logout() { session=null; sessionStorage.removeItem('dacha_sess'); pendingPwd=null; plots.forEach(p=>delete p.storedPwd); updateUI(); renderAdd(); renderPayPage(); go('ov'); }
-
-/* ─── nav ─── */
-const PAGES = ['ov','pl','add','pay','pwd','cfg'];
-function go(id) {
-  PAGES.forEach(p=>document.getElementById('pg-'+p).classList.toggle('active',p===id));
-  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('active',PAGES[i]===id));
-  if(id==='ov')  renderOv();
-  if(id==='pl')  renderPl();
-  if(id==='add') renderAdd();
-  if(id==='pay') renderPayPage();
-  if(id==='pwd') renderPwd();
-  if(id==='cfg') { document.getElementById('cfg-url').value=url; document.getElementById('cfg-tariff').value=tariff; }
-}
-
-/* ─── load ─── */
-async function load() {
-  if (busy) return; busy=true;
-  setS('spin','Загрузка...');
+/* ─── загрузка ─── */
+async function load(quiet) {
+  if (busy) return; busy = true;
+  setS('spin', 'Загрузка…');
   try {
-    if (!url) throw new Error('не указан адрес сервера (Настройки)');
+    if (!url) throw new Error('не указан адрес сервера');
     const d = await apiGet('getData');
     if (d.error) throw new Error(d.error);
-    plots = normPlots((d.plots||[]).filter(p=>p.name&&!p.name.startsWith('Дата')));
-    // Загружаем тариф
-    try { const td=await apiGet('getTariff'); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
-    setS('ok','Обновлено в '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
-    renderOv();
-    if(document.getElementById('pg-pl').classList.contains('active'))  renderPl();
-    if(document.getElementById('pg-add').classList.contains('active')) renderAdd();
-    if(document.getElementById('pg-pay').classList.contains('active')) renderPayPage();
-    if(document.getElementById('pg-pwd').classList.contains('active')) renderPwd();
-  } catch(e) { setS('err','Ошибка: '+e.message); }
-  busy=false;
+    plots = (d.plots || []).filter(p => p.name && !String(p.name).startsWith('Дата'));
+    plots.forEach(p => (p.records || []).forEach(r => { r.date = normDate(r.date); }));
+    try { const t = await apiGet('getTariff'); if (t.tariff) tariff = Number(t.tariff); } catch {}
+    setS('ok', 'Обновлено в ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
+    render();
+  } catch (e) { setS('err', 'Ошибка: ' + e.message); if (!quiet) toast('Не удалось загрузить данные', true); }
+  busy = false;
 }
 
-/* ─── overview ─── */
+/* ─── сводка ─── */
 function renderOv() {
-  if (!plots.length) return;
-  let debt=0,cred=0,dn=0,overdue=0;
-  const _now=new Date();
-  plots.forEach(p=>{
-    const l=lastR(p); if(!l)return;
-    const b=Number(l.balance)||0;
-    if(b<0){debt+=Math.abs(b);dn++;}else cred+=b;
-    // Считаем просроченных: не сдавали >2 мес, активны после 2023, не пустые
-    const ld=pDate(l.date);
-    const mo=(_now-ld)/(1000*60*60*24*30);
-    const yr=ld.getFullYear();
-    const isEmpty=!l.date||recs(p).length===0;
-    if(!isEmpty&&yr>2023&&mo>2) overdue++;
-  });
-  document.getElementById('ov-m').innerHTML=`
+  // мой участок (владелец)
+  const mine = isOwner() ? byId(session.plotId) : null;
+  if (mine) {
+    const l = lastR(mine), b = l ? Number(l.balance) : 0;
+    $('ov-mine').innerHTML = `<div class="card"><div class="mine">
+      <div><div class="ml">Мой участок · ${plotLabel(mine)}</div>
+        <div class="bal ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div>
+        <div class="meta">${l ? `Последние показания ${esc(l.date)}: ${fmt(l.reading)} кВт·ч` : 'Записей пока нет'}${stale(mine) ? ' · <span class="neg">давно не было показаний</span>' : ''}</div></div>
+      <div class="acts"><button class="btn btn-p" onclick="go('add',${mine.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn" onclick="go('pay',${mine.id})"><i class="ti ti-cash"></i> Пополнить</button></div>
+    </div></div>`;
+  } else $('ov-mine').innerHTML = '';
+  if (!plots.length) { $('ov-m').innerHTML = ''; $('ov-d').innerHTML = $('ov-r').innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  let debt = 0, cred = 0, dn = 0, overdue = 0;
+  plots.forEach(p => { const l = lastR(p); if (!l) return; const b = Number(l.balance) || 0; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
+  $('ov-m').innerHTML = `
     <div class="met"><div class="ml">Участков</div><div class="mv">${plots.length}</div></div>
-    <div class="met"><div class="ml">Должников</div><div class="mv neg">${dn}</div></div>
-    <div class="met"><div class="ml">Общий долг</div><div class="mv">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
-    <div class="met"><div class="ml">Переплат</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
-    <div class="met" style="border:.5px solid var(--red)"><div class="ml" style="color:var(--red)">Нет показаний &gt;2 мес</div><div class="mv neg">${overdue}</div></div>`;
-  const now = new Date();
-  const sorted=[...plots].sort((a,b)=>(Number(lastR(a)?.balance)||0)-(Number(lastR(b)?.balance)||0));
-  let dh='<div class="ow"><table><thead><tr><th>Участок</th><th class="tr">Баланс, ₸</th><th>Статус</th><th>Показания</th></tr></thead><tbody>';
-  sorted.forEach(p=>{
-    const l=lastR(p); if(!l)return;
-    const b=Number(l.balance)||0;
-    const lastDate=pDate(l.date);
-    const monthsAgo=(now-lastDate)/(1000*60*60*24*30);
-    // Игнорируем участки без активности с 2023 года или совсем пустые
-    const lastYear=lastDate.getFullYear();
-    const isEmpty=!l.date||recs(p).length===0;
-    const inactive2023=lastYear>0&&lastYear<=2023;
-    let actBadge='';
-    if(!isEmpty&&!inactive2023&&monthsAgo>2){
-      actBadge='<span style="color:#a32d2d;font-size:16px;font-weight:bold" title="Более 2 месяцев без показаний">↑</span>';
-    }
-    const statusBadge=b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>';
-    dh+=`<tr><td>${sName(p.name)}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td>${statusBadge}</td><td style="text-align:center">${actBadge}</td></tr>`;
-  });
-  document.getElementById('ov-d').innerHTML=dh+'</tbody></table></div>';
-  let rec=[];
-  plots.forEach(p=>{ const l=lastR(p); if(l) rec.push({pn:p.name,...l}); });
-  rec.sort((a,b)=>pDate(b.date)-pDate(a.date)); rec=rec.slice(0,8);
-  let rh='<div class="ow"><table><thead><tr><th>Участок</th><th>Дата</th><th class="tr">Расход</th><th class="tr">Сумма</th></tr></thead><tbody>';
-  rec.forEach(r=>{ rh+=`<tr><td class="tnw">${sName(r.pn)}</td><td class="tnw">${r.date}</td><td class="tr">${r.consumption} кВт</td><td class="tr">${fmt(r.cost)} ₸</td></tr>`; });
-  document.getElementById('ov-r').innerHTML=rh+'</tbody></table></div>';
+    <div class="met"><div class="ml">Должников</div><div class="mv ${dn ? 'neg' : ''}">${dn}</div></div>
+    <div class="met"><div class="ml">Общий долг</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
+    <div class="met"><div class="ml">Переплаты</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
+    <div class="met ${overdue ? 'warn' : ''}"><div class="ml">Нет показаний более 2 мес.</div><div class="mv ${overdue ? 'neg' : ''}">${overdue}</div></div>`;
+  const sorted = plots.filter(lastR).sort((a, b) => Number(lastR(a).balance) - Number(lastR(b).balance));
+  $('ov-d').innerHTML = sorted.map(p => {
+    const b = Number(lastR(p).balance) || 0;
+    const tags = (b < 0 ? '<span class="badge berr">долг</span>' : '<span class="badge bok">ОК</span>') + (stale(p) ? ' <span class="badge bwarn" title="Более 2 месяцев без показаний">нет показаний</span>' : '');
+    return `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${tags}</div></div><div class="amt ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div>`;
+  }).join('') || '<div class="empty">Нет записей</div>';
+  const rec = plots.map(p => ({ p, l: lastR(p) })).filter(x => x.l).sort((a, b) => pDate(b.l.date) - pDate(a.l.date)).slice(0, 8);
+  $('ov-r').innerHTML = rec.map(({ p, l }) => `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${esc(l.date)} · ${fmt(l.consumption)} кВт·ч</div></div><div class="amt">${money(l.cost)}</div></div>`).join('') || '<div class="empty">Нет записей</div>';
 }
 
-/* ─── plots ─── */
+/* ─── участки ─── */
 function renderPl() {
-  const el=document.getElementById('pl-list');
-  if(!plots.length){el.innerHTML='<div class="loading">Нет данных</div>';return;}
-  el.innerHTML=plots.map((p,i)=>{
-    const l=lastR(p),b=l?Number(l.balance):null;
-    const bCls=b===null?'':b>=0?'pos':'neg';
-    const badge=b===null?'':b>=0?'<span class="badge bok">ОК</span>':'<span class="badge berr">Долг</span>';
-    const btns=canEdit(p.name)?`<div style="display:flex;gap:6px;margin-top:10px">
-      <button class="btn btn-sm" onclick="event.stopPropagation();goAdd(${i})"><i class="ti ti-plus"></i> Запись</button>
-      <button class="btn btn-sm" onclick="event.stopPropagation();goPay(${i})"><i class="ti ti-cash"></i> Оплата</button>
-    </div>`:'';
-    return `<div class="pc" id="pc${i}" onclick="tog(${i})">
-      <div class="pch">
-        <div><div class="pname">${p.name}</div><div class="pmeta">${recs(p).length} записей · ${l?l.date:'нет данных'}</div></div>
-        <div style="display:flex;align-items:center;gap:8px">${badge}<div class="${bCls}" style="font-size:15px;white-space:nowrap">${b!==null?fmt(Math.round(b))+' ₸':'—'}</div></div>
-      </div>
-      <div class="pd" id="pd${i}">${makeTbl(p)}${btns}</div>
+  const el = $('pl-list');
+  if (!plots.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const list = isOwner() ? [...myPlots(), ...plots.filter(p => p.id !== session.plotId)] : plots;
+  el.innerHTML = list.map(p => {
+    const l = lastR(p), b = l ? Number(l.balance) : null;
+    const acts = canEdit(p) ? `<div class="pacts"><button class="btn btn-sm btn-p" onclick="go('add',${p.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn btn-sm" onclick="go('pay',${p.id})"><i class="ti ti-cash"></i> Пополнить</button></div>` : '';
+    return `<div class="pc" id="pc${p.id}">
+      <button class="pch" onclick="this.parentNode.classList.toggle('open')" aria-expanded="false">
+        <div style="min-width:0"><div class="pname">${plotLabel(p)}${canEdit(p) && isOwner() ? ' <span class="badge bok">мой</span>' : ''}</div><div class="pmeta">${recs(p).length} записей · ${l ? esc(l.date) : 'нет данных'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="amt ${b === null ? '' : b >= 0 ? 'pos' : 'neg'}">${b === null ? '—' : money(b)}</div><i class="ti ti-chevron-down chev"></i></div>
+      </button>
+      <div class="pd">${acts}${records(p)}</div>
     </div>`;
   }).join('');
 }
-function tog(i){document.getElementById('pc'+i).classList.toggle('open');}
-function makeTbl(p){
-  const rs=recs(p).slice().reverse();
-  if(!rs.length) return '<p style="font-size:13px;color:var(--text2)">Нет записей</p>';
-  let h='<div class="ow"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Пополнение</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>';
-  rs.forEach(r=>{const b=Number(r.balance);
-    h+=`<tr><td class="tnw">${r.date}</td><td class="tr">${fmt(r.reading)}</td><td class="tr">${r.consumption}</td><td class="tr">${r.price}</td><td class="tr">${fmt(r.cost)}</td><td class="tr">${r.topup?fmt(r.topup):'—'}</td><td class="tr ${b>=0?'pos':'neg'}">${fmt(Math.round(b))}</td><td style="font-size:11px">${r.checkNum||''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note||''}</td></tr>`;});
-  return h+'</tbody></table></div>';
+function records(p) {
+  const rs = recs(p).slice().reverse();
+  if (!rs.length) return '<div class="empty">Нет записей</div>';
+  const d = `<div class="ow recs-d"><table><thead><tr><th>Дата</th><th class="tr">Показание</th><th class="tr">Расход</th><th class="tr">Цена</th><th class="tr">Стоимость</th><th class="tr">Оплата</th><th class="tr">Баланс</th><th>Чек</th><th>Примечание</th></tr></thead><tbody>${rs.map(r => {
+    const b = Number(r.balance);
+    return `<tr><td class="tnw">${esc(r.date)}</td><td class="tr">${fmt(r.reading)}</td><td class="tr">${fmt(r.consumption)}</td><td class="tr">${fmt(r.price)}</td><td class="tr">${fmt(r.cost)}</td><td class="tr">${r.topup ? fmt(r.topup) : '—'}</td><td class="tr ${b >= 0 ? 'pos' : 'neg'}">${fmt(Math.round(b))}</td><td style="font-size:12px">${esc(r.checkNum)}</td><td style="font-size:12px;max-width:180px;word-break:break-word">${esc(r.note)}</td></tr>`;
+  }).join('')}</tbody></table></div>`;
+  const m = `<div class="recs-m">${rs.map(r => {
+    const b = Number(r.balance);
+    return `<div class="rc"><div class="rc-h"><span>${esc(r.date)}</span><span class="amt ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</span></div>
+      <div class="rc-g"><span>Показание <b>${fmt(r.reading)}</b></span><span>Расход <b>${fmt(r.consumption)} кВт·ч</b></span><span>Стоимость <b>${money(r.cost)}</b></span><span>Оплата <b>${r.topup ? money(r.topup) : '—'}</b></span></div>
+      ${r.checkNum || r.note ? `<div class="rc-n">${r.checkNum ? 'Чек ' + esc(r.checkNum) : ''}${r.checkNum && r.note ? ' · ' : ''}${esc(r.note)}</div>` : ''}</div>`;
+  }).join('')}</div>`;
+  return d + m;
 }
 
-/* ─── add ─── */
-function renderAdd() {
-  const prompt=document.getElementById('add-prompt'), form=document.getElementById('add-form');
-  if(!session){prompt.style.display='';form.style.display='none';return;}
-  prompt.style.display='none';form.style.display='';
-  const avail=isAdmin()?plots:plots.filter(p=>p.name===session.plotName);
-  document.getElementById('a-plot').innerHTML=avail.map(p=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
-  document.getElementById('a-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('a-price').value=tariff;
-  // Тариф и предыдущее показание — только для админа
-  document.getElementById('a-price').readOnly = !isAdmin();
-  document.getElementById('a-prev').readOnly  = !isAdmin();
-  fillPrev();
+/* ─── выбор участка в формах ─── */
+function plotPicker(wrap, sel, onchange, preferId) {
+  const avail = myPlots();
+  if (avail.length === 1) { $(wrap).innerHTML = `<div class="plot-fixed" data-id="${avail[0].id}" id="${sel}">${plotLabel(avail[0])}</div>`; return avail[0].id; }
+  const pick = avail.some(p => p.id === Number(preferId)) ? Number(preferId) : ($(sel)?.value ? Number($(sel).value) : avail[0]?.id);
+  $(wrap).innerHTML = `<select id="${sel}" onchange="${onchange}()">${avail.map(p => `<option value="${p.id}" ${p.id === pick ? 'selected' : ''}>${esc(shortName(p.name))}${plotNo(p.name) ? ' · уч. ' + esc(plotNo(p.name)) : ''}</option>`).join('')}</select>`;
+  return pick;
 }
-function goAdd(idx){if(!canEdit(plots[idx].name)){openLogin();return;}go('add');setTimeout(()=>{document.getElementById('a-plot').value=idx;fillPrev();},150);}
-function fillPrev(){
-  const idx=parseInt(document.getElementById('a-plot')?.value);
-  if(isNaN(idx)||!plots[idx])return;
-  const l=lastR(plots[idx]);
-  document.getElementById('a-prev').value=l?l.reading:'';
-  document.getElementById('a-bb').value=l?Math.round(Number(l.balance)):'';
+const pickedId = sel => { const e = $(sel); return e ? Number(e.dataset.id || e.value) : NaN; };
+
+/* ─── показания ─── */
+function renderAdd(plotId) {
+  if (!session) { $('add-prompt').style.display = ''; $('add-form').style.display = 'none'; return; }
+  $('add-prompt').style.display = 'none'; $('add-form').style.display = '';
+  plotPicker('a-plot-wrap', 'a-plot', 'fillAdd', plotId);
+  document.querySelectorAll('#add-form .admin-only').forEach(e => e.style.display = isAdmin() ? '' : 'none');
+  if (!$('a-date').value) $('a-date').value = localIso();
+  $('a-date').max = localIso();
+  $('a-price').value = tariff;
+  fillAdd();
+}
+function fillAdd() {
+  const p = byId(pickedId('a-plot')); if (!p) return;
+  const l = lastR(p);
+  $('a-prev').value = l ? l.reading : 0;
+  { const m = l && normDate(l.date).match(/^(\d{2})\.(\d{2})\.(\d{4})$/); $('a-date').min = m ? `${m[3]}-${m[2]}-${m[1]}` : ''; }
+  $('a-prev-hint').textContent = l ? `Предыдущее: ${fmt(l.reading)} кВт·ч от ${l.date} · баланс ${money(l.balance)}` : 'Первая запись по участку';
   calcAdd();
 }
-function calcAdd(){
-  const nr=parseFloat(document.getElementById('a-read')?.value);
-  const pr=parseFloat(document.getElementById('a-prev')?.value);
-  const price=parseFloat(document.getElementById('a-price')?.value)||tariff;
-  const topup=parseFloat(document.getElementById('a-topup')?.value)||0;
-  const bb=parseFloat(document.getElementById('a-bb')?.value)||0;
-  if(!isNaN(nr)&&!isNaN(pr)){
-    const cons=Math.max(0,nr-pr),cost=cons*price,nb=bb+topup-cost;
-    document.getElementById('a-cons').value=cons;
-    document.getElementById('a-preview').innerHTML=`<strong>Расход:</strong> ${cons} кВт·ч &nbsp;·&nbsp; <strong>Стоимость:</strong> ${fmt(Math.round(cost))} ₸ &nbsp;·&nbsp; <strong>Новый баланс:</strong> <span class="${nb>=0?'pos':'neg'}">${fmt(Math.round(nb))} ₸</span>`;
-  }else{document.getElementById('a-cons').value='';document.getElementById('a-preview').textContent='Введите показание для расчёта';}
+function addValues() {
+  const p = byId(pickedId('a-plot'));
+  const l = p ? lastR(p) : null;
+  const reading = num($('a-read').value);
+  const prev = isAdmin() && $('a-prev').value !== '' ? num($('a-prev').value) : (l ? Number(l.reading) : 0);
+  const price = isAdmin() && num($('a-price').value) > 0 ? num($('a-price').value) : tariff;
+  const topupRaw = $('a-topup').value.trim();
+  const topup = topupRaw === '' ? 0 : num(topupRaw);
+  const bb = l ? Number(l.balance) : 0;
+  return { p, l, reading, prev, price, topup, bb, date: $('a-date').value };
 }
-async function submitAdd(){
-  const idx=parseInt(document.getElementById('a-plot').value);
-  const plot=plots[idx];if(!plot||!canEdit(plot.name))return;
-  const reading=parseFloat(document.getElementById('a-read').value);
-  const prevR=parseFloat(document.getElementById('a-prev').value)||0;
-  const price=parseFloat(document.getElementById('a-price').value)||tariff;
-  const topup=parseFloat(document.getElementById('a-topup').value)||0;
-  const bb=parseFloat(document.getElementById('a-bb').value)||0;
-  const date=document.getElementById('a-date').value;
-  const msgEl=document.getElementById('a-msg');
-  if(!reading){msgEl.innerHTML='<div class="msg merr">Укажите текущие показания счётчика</div>';return;}
-  if(!topup||topup<=0){msgEl.innerHTML='<div class="msg merr">Укажите сумму к оплате</div>';return;}
-  if(!date){msgEl.innerHTML='<div class="msg merr">Укажите дату</div>';return;}
-  if(reading<prevR){msgEl.innerHTML='<div class="msg merr">Новое показание меньше предыдущего</div>';return;}
-  // Проверка: нет ли уже записи за сегодня
-  const todayStr = new Date().toLocaleDateString('ru-RU').split('.').map((v,i)=>i<2?v.padStart(2,'0'):v).join('.');
-  const plotRecs = recs(plots[idx]);
-  const alreadyToday = plotRecs.some(r => r.date === todayStr);
-  if(alreadyToday){msgEl.innerHTML='<div class="msg merr">Запись уже есть за сегодня</div>';return;}
-  const cons=Math.max(0,reading-prevR);
-  const body={action:'addRecord',plotName:plot.name,date:date.split('-').reverse().join('.'),reading,prevReading:prevR,consumption:cons,price,topup,balanceBefore:bb,checkNum:document.getElementById('a-chk').value,note:document.getElementById('a-note').value};
-  const btn=document.getElementById('a-btn');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
-  try{
-    const d=await apiPost(body);if(d.error)throw new Error(d.error);
-    msgEl.innerHTML=`<div class="msg mok">Записано! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
-    ['a-read','a-topup','a-chk','a-note'].forEach(id=>document.getElementById(id).value='');
-    await load();fillPrev();
-  }catch(e){msgEl.innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить';
+function calcAdd() {
+  const v = addValues();
+  $('a-read').classList.toggle('bad', !isNaN(v.reading) && v.reading < v.prev);
+  if (isNaN(v.reading)) { $('a-preview').textContent = 'Введите показание — расход, стоимость и новый баланс посчитаются сами'; return; }
+  if (v.reading < v.prev) { $('a-preview').innerHTML = `<span class="neg">Показание меньше предыдущего (${fmt(v.prev)} кВт·ч)</span>`; return; }
+  const cons = Math.round((v.reading - v.prev) * 100) / 100, cost = cons * v.price, nb = v.bb + (isNaN(v.topup) ? 0 : v.topup) - cost;
+  $('a-preview').innerHTML = `<div class="pv"><div><div class="pl">Расход</div><div class="pn">${fmt(cons)} кВт·ч</div></div><div><div class="pl">Стоимость</div><div class="pn">${money(cost)}</div></div><div><div class="pl">Новый баланс</div><div class="pn ${nb >= 0 ? 'pos' : 'neg'}">${money(nb)}</div></div></div>`;
+}
+async function submitAdd() {
+  const v = addValues();
+  if (!v.p || !canEdit(v.p)) return msg('a-msg', false, 'Нет доступа к этому участку');
+  if (isNaN(v.reading) || v.reading <= 0) return msg('a-msg', false, 'Укажите показание счётчика');
+  if (v.reading < v.prev) return msg('a-msg', false, 'Новое показание меньше предыдущего');
+  if (isNaN(v.topup) || v.topup < 0) return msg('a-msg', false, 'Сумма оплаты не может быть отрицательной (0 — без оплаты)');
+  if (!v.date) return msg('a-msg', false, 'Укажите дату');
+  if (v.date > localIso()) return msg('a-msg', false, 'Дата не может быть в будущем');
+  if (recs(v.p).some(r => r.date === isoToRu(v.date))) return msg('a-msg', false, `Запись за ${isoToRu(v.date)} уже есть`);
+  if (v.l && pDate(isoToRu(v.date)) < pDate(v.l.date)) return msg('a-msg', false, `Дата раньше последней записи (${v.l.date})`);
+  const body = { action: 'addRecord', plotId: v.p.id, date: isoToRu(v.date), reading: v.reading, topup: v.topup, checkNum: $('a-chk').value.trim(), note: $('a-note').value.trim() };
+  if (isAdmin()) { body.prevReading = v.prev; body.price = v.price; }
+  const btn = $('a-btn'); btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Сохраняем…'; $('a-msg').innerHTML = '';
+  try {
+    const d = await apiPost(body); if (d.error) throw new Error(d.error);
+    ['a-read', 'a-topup', 'a-chk', 'a-note'].forEach(id => $(id).value = '');
+    msg('a-msg', true, `Записано. Расход ${fmt(d.consumption)} кВт·ч, новый баланс ${money(d.newBalance)}`);
+    toast('Показания сохранены');
+    await load(true);
+  } catch (e) { msg('a-msg', false, 'Ошибка: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i> Сохранить показания';
 }
 
-/* ─── payment ─── */
-function renderPayPage(){
-  const prompt=document.getElementById('pay-prompt'),form=document.getElementById('pay-form');
-  if(!session){prompt.style.display='';form.style.display='none';return;}
-  prompt.style.display='none';form.style.display='';
-  const avail=isAdmin()?plots:plots.filter(p=>p.name===session.plotName);
-  document.getElementById('pay-plot').innerHTML=avail.map(p=>`<option value="${plots.indexOf(p)}">${p.name}</option>`).join('');
-  fillPayInfo();
+/* ─── оплата ─── */
+function renderPay(plotId) {
+  if (!session) { $('pay-prompt').style.display = ''; $('pay-form').style.display = 'none'; return; }
+  $('pay-prompt').style.display = 'none'; $('pay-form').style.display = '';
+  plotPicker('pay-plot-wrap', 'pay-plot', 'fillPay', plotId);
+  fillPay();
 }
-function goPay(idx){if(!canEdit(plots[idx].name)){openLogin();return;}go('pay');setTimeout(()=>{document.getElementById('pay-plot').value=idx;fillPayInfo();},150);}
-function fillPayInfo(){
-  const idx=parseInt(document.getElementById('pay-plot')?.value);
-  if(isNaN(idx)||!plots[idx])return;
-  const l=lastR(plots[idx]);
-  const el=document.getElementById('pay-info');
-  if(!l){el.textContent='Нет записей для этого участка';return;}
-  const topupStr=l.topup?fmt(l.topup)+' ₸':'—';
-  const b=Number(l.balance)||0;
-  el.innerHTML=`<strong>Последняя запись:</strong> ${l.date} &nbsp;·&nbsp; <strong>Расход:</strong> ${l.consumption} кВт·ч &nbsp;·&nbsp; <strong>Стоимость:</strong> ${fmt(l.cost)} ₸<br><strong>Текущее пополнение:</strong> ${topupStr} &nbsp;·&nbsp; <strong>Баланс:</strong> <span class="${b>=0?'pos':'neg'}">${fmt(Math.round(b))} ₸</span>`;
+function fillPay() {
+  const p = byId(pickedId('pay-plot')); if (!p) return;
+  const l = lastR(p);
+  $('pay-btn').disabled = !l;
+  if (!l) { $('pay-info').innerHTML = 'По участку ещё нет записей — сначала внесите показания.'; $('pay-preview').textContent = ''; return; }
+  const b = Number(l.balance) || 0;
+  $('pay-info').innerHTML = `<div class="pv"><div><div class="pl">Последняя запись</div><div class="pn" style="font-size:16px">${esc(l.date)}</div></div><div><div class="pl">Стоимость</div><div class="pn">${money(l.cost)}</div></div><div><div class="pl">Баланс</div><div class="pn ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div></div>`;
   calcPay();
 }
-function calcPay(){
-  const idx=parseInt(document.getElementById('pay-plot')?.value);
-  const amount=parseFloat(document.getElementById('pay-amount')?.value)||0;
-  const el=document.getElementById('pay-preview');
-  if(!plots[idx]||!amount){el.textContent='Введите сумму для расчёта нового баланса';return;}
-  const l=lastR(plots[idx]);if(!l)return;
-  const newTopup=(Number(l.topup)||0)+amount;
-  const newBal=(Number(l.balanceBefore)||0)+newTopup-(Number(l.cost)||0);
-  el.innerHTML=`<strong>Пополнение станет:</strong> ${fmt(newTopup)} ₸ &nbsp;·&nbsp; <strong>Новый баланс:</strong> <span class="${newBal>=0?'pos':'neg'}">${fmt(Math.round(newBal))} ₸</span>`;
+function calcPay() {
+  const p = byId(pickedId('pay-plot')); const l = p && lastR(p); if (!l) return;
+  const a = num($('pay-amount').value);
+  if (isNaN(a) || a <= 0) { $('pay-preview').textContent = 'Введите сумму — новый баланс посчитается сам'; return; }
+  const nb = (Number(l.balanceBefore) || 0) + (Number(l.topup) || 0) + a - (Number(l.cost) || 0);
+  $('pay-preview').innerHTML = `Новый баланс: <b class="${nb >= 0 ? 'pos' : 'neg'}">${money(nb)}</b>`;
 }
-async function submitPay(){
-  const idx=parseInt(document.getElementById('pay-plot').value);
-  const plot=plots[idx];if(!plot||!canEdit(plot.name))return;
-  const amount=parseFloat(document.getElementById('pay-amount').value);
-  const msgEl=document.getElementById('pay-msg');
-  if(!amount||amount<=0){msgEl.innerHTML='<div class="msg merr">Укажите сумму оплаты</div>';return;}
-  const body={action:'updatePayment',plotName:plot.name,topup:amount,checkNum:document.getElementById('pay-chk').value,note:document.getElementById('pay-note').value};
-  const btn=document.getElementById('pay-btn');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
-  try{
-    const d=await apiPost(body);if(d.error)throw new Error(d.error);
-    msgEl.innerHTML=`<div class="msg mok">Оплата внесена! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
-    ['pay-amount','pay-chk','pay-note'].forEach(id=>document.getElementById(id).value='');
-    await load();fillPayInfo();
-  }catch(e){msgEl.innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-cash"></i> Сохранить оплату';
+async function submitPay() {
+  const p = byId(pickedId('pay-plot'));
+  if (!p || !canEdit(p)) return msg('pay-msg', false, 'Нет доступа к этому участку');
+  const a = num($('pay-amount').value);
+  if (isNaN(a) || a <= 0) return msg('pay-msg', false, 'Сумма пополнения должна быть больше 0');
+  const btn = $('pay-btn'); btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Сохраняем…'; $('pay-msg').innerHTML = '';
+  try {
+    const d = await apiPost({ action: 'updatePayment', plotId: p.id, topup: a, checkNum: $('pay-chk').value.trim(), note: $('pay-note').value.trim() });
+    if (d.error) throw new Error(d.error);
+    ['pay-amount', 'pay-chk', 'pay-note'].forEach(id => $(id).value = '');
+    msg('pay-msg', true, `Оплата внесена. Новый баланс ${money(d.newBalance)}`);
+    toast('Оплата сохранена');
+    await load(true);
+  } catch (e) { msg('pay-msg', false, 'Ошибка: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-cash"></i> Сохранить оплату';
 }
 
-/* ─── passwords ─── */
-function renderPwd(){
-  if(!isAdmin())return;
-  const el=document.getElementById('pwd-list');
-  if(!plots.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Загрузка...</p>';return;}
-  let h='';
-  plots.forEach((p,i)=>{
-    const code=pendingPwd?(pendingPwd[i]?.newPwd||'—'):(p.storedPwd||'—');
-    const tag=pendingPwd?'<span style="font-size:10px;color:var(--amber);margin-left:6px">● новый</span>':'';
-    const codeStyle=(!pendingPwd&&!p.storedPwd)?'style="color:var(--text3)"':'';
-    h+=`<div class="pwd-row">
-      <div style="font-size:13px">${p.name}</div>
-      <div><span class="pwd-code" ${codeStyle}>${code}</span>${tag}</div>
-    </div>`;
-  });
-  el.innerHTML=h;
+/* ─── коды (администратор) ─── */
+function renderPwd() {
+  if (!isAdmin()) return;
+  $('pwd-list').innerHTML = plots.map(p => {
+    const code = pendingPwd ? pendingPwd[p.id] : (p.storedPwd || '—');
+    return `<div class="pwd-row"><div style="min-width:0">${plotLabel(p)}</div><div><span class="pwd-code" ${!pendingPwd && !p.storedPwd ? 'style="color:var(--text3)"' : ''}>${esc(code)}</span>${pendingPwd ? ' <span class="badge bwarn">новый</span>' : ''}</div></div>`;
+  }).join('') || '<div class="empty">Загрузка…</div>';
+  $('btn-save-pwd').style.display = $('btn-cancel-pwd').style.display = pendingPwd ? '' : 'none';
 }
-function genPwd(){
-  if(!isAdmin())return;
-  const used=new Set();
-  pendingPwd=plots.map(p=>{let c;do{c=String(Math.floor(1000+Math.random()*9000));}while(used.has(c));used.add(c);return{...p,newPwd:c};});
-  document.getElementById('btn-save-pwd').style.display='';
+function genPwd() {
+  if (!isAdmin()) return;
+  const used = new Set();
+  pendingPwd = {};
+  plots.forEach(p => { let c; do { c = String(Math.floor(1000 + Math.random() * 9000)); } while (used.has(c)); used.add(c); pendingPwd[p.id] = c; });
   renderPwd();
 }
-async function savePwd(){
-  if(!isAdmin()||!pendingPwd)return;
-  const btn=document.getElementById('btn-save-pwd');
-  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';
-  try{
-    const pwdMap=pendingPwd.map(p=>({plotName:p.name,password:p.newPwd}));
-    const d=await apiPost({action:'savePasswords',passwords:pwdMap});if(d.error)throw new Error(d.error);
-    document.getElementById('pwd-msg').innerHTML='<div class="msg mok">Пароли сохранены в базу!</div>';
-    setTimeout(()=>document.getElementById('pwd-msg').innerHTML='',3000);
-    pendingPwd=null;btn.style.display='none';
-    await load();renderPwd();
-  }catch(e){document.getElementById('pwd-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в базу';
+function cancelPwd() { pendingPwd = null; renderPwd(); }
+async function savePwd() {
+  if (!isAdmin() || !pendingPwd) return;
+  if (!confirm('Заменить коды всех участков? Старые коды перестанут работать.')) return;
+  const btn = $('btn-save-pwd'); btn.disabled = true;
+  try {
+    const d = await apiPost({ action: 'savePasswords', passwords: plots.map(p => ({ plotId: p.id, password: pendingPwd[p.id] })) });
+    if (d.error) throw new Error(d.error);
+    pendingPwd = null; toast('Коды сохранены'); await load(true);
+  } catch (e) { msg('pwd-msg', false, 'Ошибка: ' + e.message); }
+  btn.disabled = false;
 }
 
-/* ─── settings ─── */
-async function saveTariff(){
-  if(!isAdmin())return;
-  const t=parseFloat(document.getElementById('cfg-tariff').value);
-  if(!t||t<=0){document.getElementById('tariff-msg').innerHTML='<div class="msg merr">Введите корректный тариф</div>';return;}
-  try{
-    const d=await apiPost({action:'setTariff',tariff:t});if(d.error)throw new Error(d.error);
-    tariff=t;
-    document.getElementById('tariff-msg').innerHTML=`<div class="msg mok">Тариф сохранён: ${t} ₸/кВт·ч</div>`;
-    setTimeout(()=>document.getElementById('tariff-msg').innerHTML='',3000);
-  }catch(e){document.getElementById('tariff-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
+/* ─── настройки (администратор) ─── */
+async function saveTariff() {
+  if (!isAdmin()) return;
+  const t = num($('cfg-tariff').value);
+  if (isNaN(t) || t <= 0) return msg('tariff-msg', false, 'Введите корректный тариф');
+  try { const d = await apiPost({ action: 'setTariff', tariff: t }); if (d.error) throw new Error(d.error); tariff = t; msg('tariff-msg', true, `Тариф сохранён: ${t} ₸ за кВт·ч`); }
+  catch (e) { msg('tariff-msg', false, 'Ошибка: ' + e.message); }
 }
-function saveUrl(){
-  const v=document.getElementById('cfg-url').value.trim();
-  if(v){url=v;localStorage.setItem('dacha_api',v);}else{url=DEFAULT_API;localStorage.removeItem('dacha_api');}
-  document.getElementById('cfg-msg').innerHTML='<div class="msg mok">Сохранено</div>';
-  setTimeout(()=>document.getElementById('cfg-msg').innerHTML='',2500);
-  load();
+function saveUrl() {
+  const v = $('cfg-url').value.trim();
+  if (v) { url = v; localStorage.setItem('dacha_api', v); } else { url = DEFAULT_API; localStorage.removeItem('dacha_api'); }
+  msg('cfg-msg', true, 'Сохранено'); load();
 }
 
-/* ─── init ─── */
+/* ─── старт ─── */
 updateUI();
 load();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLogin(); });
 </script>
 </body>
 </html>
