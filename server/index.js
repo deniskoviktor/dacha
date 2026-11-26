@@ -175,20 +175,16 @@ async function audit(c, sess, action, plotName, details) {
 /* ─── чтение ─── */
 /** Для напоминания в группу: только номера участков (без ФИО и сумм). Логика как на странице: stale() и долг. */
 async function getSummary() {
-  const plots = (await pool.query('SELECT id, plot_number FROM plots WHERE active ORDER BY sort_order, id')).rows;
-  const last = new Map((await pool.query(`SELECT DISTINCT ON (plot_id) plot_id, date, balance FROM records
-    WHERE date IS NOT NULL AND (reading > 0 OR consumption > 0 OR topup > 0 OR cost > 0) ORDER BY plot_id, date DESC, id DESC`)).rows.map(r => [r.plot_id, r]));
+  // та же логика, что на странице и в push: долг — по показаниям ИЛИ (давно нет показаний и по оценке баланс < 0)
+  const st = await push.plotStates();
   const stale = [], debt = []; let staleNoNum = 0, debtNoNum = 0;
-  for (const p of plots) {
-    const r = last.get(p.id); if (!r) continue;
-    const [y, m, d] = r.date.split('-').map(Number);
-    const isStale = y > 2023 && (Date.now() - new Date(y, m - 1, d)) / (864e5 * 30.4) > 2;
-    const no = String(p.plot_number || '').trim();
-    if (isStale) no ? stale.push(no) : staleNoNum++;
-    if (Number(r.balance) < 0) no ? debt.push(no) : debtNoNum++;
+  for (const s of st.values()) {
+    const no = String(s.number || '').trim();
+    if (s.stale) no ? stale.push(no) : staleNoNum++;
+    if (s.bal < 0 || (s.stale && s.est < 0)) no ? debt.push(no) : debtNoNum++;
   }
   const sort = a => a.sort((x, y) => parseInt(x) - parseInt(y) || x.localeCompare(y));
-  return { stale: sort(stale), debt: sort(debt), staleNoNum, debtNoNum };
+  return { stale: sort(stale), debt: sort(debt), staleNoNum, debtNoNum, estimated: true };
 }
 
 async function getData(sess) {
