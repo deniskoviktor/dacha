@@ -91,7 +91,10 @@ async function getTariff(c = pool) {
 function needEdit(sess, plot) {
   if (!sess) throw new UserError('Требуется вход');
   if (sess.role === 'admin') return;
-  if (sess.role === 'owner' && (sess.plotId === plot.id || sess.plotName === plot.name)) return;
+  if (sess.role === 'owner' && (sess.plotId === plot.id || sess.plotName === plot.name)) {
+    if (plot.active === false) throw new UserError('Участок отключён администратором');
+    return;
+  }
   throw new UserError('Нет доступа к этому участку');
 }
 function needAdmin(sess) {
@@ -128,7 +131,8 @@ async function audit(c, sess, action, plotName, details) {
 /* ─── чтение ─── */
 async function getData(sess) {
   const isAdmin = sess && sess.role === 'admin';
-  const plots = (await pool.query('SELECT * FROM plots ORDER BY sort_order, id')).rows;
+  // отключённые участки видит только администратор
+  const plots = (await pool.query(`SELECT * FROM plots ${isAdmin ? '' : 'WHERE active'} ORDER BY sort_order, id`)).rows;
   const recs = (await pool.query('SELECT * FROM records ORDER BY plot_id, id')).rows;
   const byPlot = new Map(plots.map(p => [p.id, []]));
   for (const r of recs) {
@@ -142,7 +146,7 @@ async function getData(sess) {
   }
   return {
     plots: plots.map(p => {
-      const o = { id: p.id, name: isAdmin ? p.name : publicName(p.name), records: byPlot.get(p.id) };
+      const o = { id: p.id, name: isAdmin ? p.name : publicName(p.name), active: p.active, records: byPlot.get(p.id) };
       if (isAdmin) o.storedPwd = p.password || ''; // коды и телефоны видит только администратор
       return o;
     }),
@@ -157,7 +161,8 @@ async function checkPassword(password, ip) {
     fails.delete(ip);
     return { ok: true, role: 'admin', token: makeToken({ role: 'admin' }) };
   }
-  const r = await pool.query('SELECT id, name FROM plots WHERE password=$1', [password]);
+  const r = await pool.query('SELECT id, name, active FROM plots WHERE password=$1', [password]);
+  if (r.rows.length === 1 && !r.rows[0].active) { addFail(ip); throw new UserError('Участок отключён — обратитесь к администратору'); }
   if (r.rows.length === 1) {
     fails.delete(ip);
     const { id: plotId, name } = r.rows[0];
@@ -243,6 +248,17 @@ async function savePasswords(sess, b) {
   });
 }
 
+async function setPlotActive(sess, b) {
+  needAdmin(sess);
+  const active = b.active === true || b.active === 'true';
+  return tx(async c => {
+    const plot = await plotOf(c, b, true);
+    await c.query('UPDATE plots SET active=$2 WHERE id=$1', [plot.id, active]);
+    await audit(c, sess, active ? 'enablePlot' : 'disablePlot', plot.name, { plotId: plot.id });
+    return { ok: true, plotId: plot.id, active };
+  });
+}
+
 async function setTariff(sess, b) {
   needAdmin(sess);
   const t = num(b.tariff);
@@ -288,6 +304,7 @@ app.post('/api', wrap(async req => {
     case 'updatePayment': return updatePayment(sess, b);
     case 'savePasswords': return savePasswords(sess, b);
     case 'setTariff': return setTariff(sess, b);
+    case 'setPlotActive': return setPlotActive(sess, b);
     default: throw new UserError('Неизвестное действие');
   }
 }));

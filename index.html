@@ -123,6 +123,18 @@ input.bad{border-color:var(--red)}
 .pwd-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
 .pwd-row:last-child{border-bottom:none}
 .pwd-code{font-family:ui-monospace,monospace;font-size:17px;font-weight:650;letter-spacing:3px;background:var(--bg2);padding:4px 10px;border-radius:var(--r)}
+/* переключатель участков */
+.sw-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.sw-row:last-child{border-bottom:none}
+.sw-row .sm{font-size:12px;color:var(--text2);margin-top:2px}
+.sw{position:relative;width:52px;height:30px;flex-shrink:0}
+.sw input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;min-height:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;background:var(--border2);border-radius:999px;transition:background .15s}
+.sw span::after{content:'';position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+.sw input:checked+span{background:var(--green)}
+.sw input:checked+span::after{transform:translateX(22px)}
+.sw input:disabled+span{opacity:.5}
+.pc.off{opacity:.6}
 /* уведомление */
 .toast{position:fixed;left:50%;top:16px;transform:translateX(-50%) translateY(-160%);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:var(--r);font-size:15px;z-index:200;transition:transform .25s;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -266,6 +278,11 @@ input.bad{border-color:var(--red)}
     <div id="tariff-msg"></div>
   </div>
   <div class="card">
+    <div class="ct"><i class="ti ti-toggle-right"></i> Участки</div>
+    <p class="sub">Выключенный участок скрыт из сводки и списка для всех, кроме администратора, а код его владельца перестаёт действовать. Записи сохраняются — участок можно включить обратно.</p>
+    <div id="cfg-plots"></div>
+  </div>
+  <div class="card">
     <div class="ct"><i class="ti ti-server"></i> Сервер</div>
     <p class="sub">Данные хранятся в базе PostgreSQL на NAS. Менять адрес нужно, только если страница открыта не с самого NAS.</p>
     <div class="fg" style="margin-bottom:10px"><label for="cfg-url">Адрес API</label><input type="text" id="cfg-url" placeholder="https://…/api" autocapitalize="off" autocomplete="off"></div>
@@ -349,6 +366,7 @@ function isReal(r) { return !!(r.date && (r.reading > 0 || r.consumption > 0 || 
 const recs = p => (p.records || []).filter(isReal);
 const lastR = p => { const rr = recs(p); return rr.length ? rr[rr.length - 1] : null; };
 const byId = id => plots.find(p => p.id === Number(id));
+const act = p => p.active !== false; // участок включён
 const isAdmin = () => session?.role === 'admin';
 const isOwner = () => session?.role === 'owner';
 const canEdit = p => !!p && (isAdmin() || (isOwner() && session.plotId === p.id));
@@ -407,7 +425,7 @@ function render(id = current, plotId) {
   if (id === 'add') renderAdd(plotId);
   if (id === 'pay') renderPay(plotId);
   if (id === 'pwd') renderPwd();
-  if (id === 'cfg') { $('cfg-url').value = url; $('cfg-tariff').value = tariff; }
+  if (id === 'cfg') { $('cfg-url').value = url; $('cfg-tariff').value = tariff; renderCfgPlots(); }
 }
 
 /* ─── загрузка ─── */
@@ -440,22 +458,23 @@ function renderOv() {
       <div class="acts"><button class="btn btn-p" onclick="go('add',${mine.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn" onclick="go('pay',${mine.id})"><i class="ti ti-cash"></i> Пополнить</button></div>
     </div></div>`;
   } else $('ov-mine').innerHTML = '';
-  if (!plots.length) { $('ov-m').innerHTML = ''; $('ov-d').innerHTML = $('ov-r').innerHTML = '<div class="empty">Нет данных</div>'; return; }
+  const live = plots.filter(act);
+  if (!live.length) { $('ov-m').innerHTML = ''; $('ov-d').innerHTML = $('ov-r').innerHTML = '<div class="empty">Нет данных</div>'; return; }
   let debt = 0, cred = 0, dn = 0, overdue = 0;
-  plots.forEach(p => { const l = lastR(p); if (!l) return; const b = Number(l.balance) || 0; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
+  live.forEach(p => { const l = lastR(p); if (!l) return; const b = Number(l.balance) || 0; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
   $('ov-m').innerHTML = `
-    <div class="met"><div class="ml">Участков</div><div class="mv">${plots.length}</div></div>
+    <div class="met"><div class="ml">Участков</div><div class="mv">${live.length}${plots.length > live.length ? `<span class="mu">+${plots.length - live.length} выкл.</span>` : ''}</div></div>
     <div class="met"><div class="ml">Должников</div><div class="mv ${dn ? 'neg' : ''}">${dn}</div></div>
     <div class="met"><div class="ml">Общий долг</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
     <div class="met"><div class="ml">Переплаты</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
     <div class="met ${overdue ? 'warn' : ''}"><div class="ml">Нет показаний более 2 мес.</div><div class="mv ${overdue ? 'neg' : ''}">${overdue}</div></div>`;
-  const sorted = plots.filter(lastR).sort((a, b) => Number(lastR(a).balance) - Number(lastR(b).balance));
+  const sorted = live.filter(lastR).sort((a, b) => Number(lastR(a).balance) - Number(lastR(b).balance));
   $('ov-d').innerHTML = sorted.map(p => {
     const b = Number(lastR(p).balance) || 0;
     const tags = (b < 0 ? '<span class="badge berr">долг</span>' : '<span class="badge bok">ОК</span>') + (stale(p) ? ' <span class="badge bwarn" title="Более 2 месяцев без показаний">нет показаний</span>' : '');
     return `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${tags}</div></div><div class="amt ${b >= 0 ? 'pos' : 'neg'}">${money(b)}</div></div>`;
   }).join('') || '<div class="empty">Нет записей</div>';
-  const rec = plots.map(p => ({ p, l: lastR(p) })).filter(x => x.l).sort((a, b) => pDate(b.l.date) - pDate(a.l.date)).slice(0, 8);
+  const rec = live.map(p => ({ p, l: lastR(p) })).filter(x => x.l).sort((a, b) => pDate(b.l.date) - pDate(a.l.date)).slice(0, 8);
   $('ov-r').innerHTML = rec.map(({ p, l }) => `<div class="row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm">${esc(l.date)} · ${fmt(l.consumption)} кВт·ч</div></div><div class="amt">${money(l.cost)}</div></div>`).join('') || '<div class="empty">Нет записей</div>';
 }
 
@@ -463,13 +482,13 @@ function renderOv() {
 function renderPl() {
   const el = $('pl-list');
   if (!plots.length) { el.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  const list = isOwner() ? [...myPlots(), ...plots.filter(p => p.id !== session.plotId)] : plots;
+  const list = isOwner() ? [...myPlots(), ...plots.filter(p => p.id !== session.plotId)] : [...plots.filter(act), ...plots.filter(p => !act(p))];
   el.innerHTML = list.map(p => {
     const l = lastR(p), b = l ? Number(l.balance) : null;
     const acts = canEdit(p) ? `<div class="pacts"><button class="btn btn-sm btn-p" onclick="go('add',${p.id})"><i class="ti ti-gauge"></i> Показания</button><button class="btn btn-sm" onclick="go('pay',${p.id})"><i class="ti ti-cash"></i> Пополнить</button></div>` : '';
-    return `<div class="pc" id="pc${p.id}">
+    return `<div class="pc${act(p) ? '' : ' off'}" id="pc${p.id}">
       <button class="pch" onclick="this.parentNode.classList.toggle('open')" aria-expanded="false">
-        <div style="min-width:0"><div class="pname">${plotLabel(p)}${canEdit(p) && isOwner() ? ' <span class="badge bok">мой</span>' : ''}</div><div class="pmeta">${recs(p).length} записей · ${l ? esc(l.date) : 'нет данных'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
+        <div style="min-width:0"><div class="pname">${plotLabel(p)}${canEdit(p) && isOwner() ? ' <span class="badge bok">мой</span>' : ''}${act(p) ? '' : ' <span class="badge berr">отключён</span>'}</div><div class="pmeta">${recs(p).length} записей · ${l ? esc(l.date) : 'нет данных'}${stale(p) ? ' · <span class="neg">нет показаний > 2 мес.</span>' : ''}</div></div>
         <div style="display:flex;align-items:center;gap:8px"><div class="amt ${b === null ? '' : b >= 0 ? 'pos' : 'neg'}">${b === null ? '—' : money(b)}</div><i class="ti ti-chevron-down chev"></i></div>
       </button>
       <div class="pd">${acts}${records(p)}</div>
@@ -495,9 +514,10 @@ function records(p) {
 /* ─── выбор участка в формах ─── */
 function plotPicker(wrap, sel, onchange, preferId) {
   const avail = myPlots();
+  if (!avail.length) { $(wrap).innerHTML = `<div class="msg merr" id="${sel}">${isOwner() ? 'Ваш участок отключён администратором' : 'Нет участков'}</div>`; return NaN; }
   if (avail.length === 1) { $(wrap).innerHTML = `<div class="plot-fixed" data-id="${avail[0].id}" id="${sel}">${plotLabel(avail[0])}</div>`; return avail[0].id; }
   const pick = avail.some(p => p.id === Number(preferId)) ? Number(preferId) : ($(sel)?.value ? Number($(sel).value) : avail[0]?.id);
-  $(wrap).innerHTML = `<select id="${sel}" onchange="${onchange}()">${avail.map(p => `<option value="${p.id}" ${p.id === pick ? 'selected' : ''}>${esc(shortName(p.name))}${plotNo(p.name) ? ' · уч. ' + esc(plotNo(p.name)) : ''}</option>`).join('')}</select>`;
+  $(wrap).innerHTML = `<select id="${sel}" onchange="${onchange}()">${avail.map(p => `<option value="${p.id}" ${p.id === pick ? 'selected' : ''}>${esc(shortName(p.name))}${plotNo(p.name) ? ' · уч. ' + esc(plotNo(p.name)) : ''}${act(p) ? '' : ' (отключён)'}</option>`).join('')}</select>`;
   return pick;
 }
 const pickedId = sel => { const e = $(sel); return e ? Number(e.dataset.id || e.value) : NaN; };
@@ -506,7 +526,8 @@ const pickedId = sel => { const e = $(sel); return e ? Number(e.dataset.id || e.
 function renderAdd(plotId) {
   if (!session) { $('add-prompt').style.display = ''; $('add-form').style.display = 'none'; return; }
   $('add-prompt').style.display = 'none'; $('add-form').style.display = '';
-  plotPicker('a-plot-wrap', 'a-plot', 'fillAdd', plotId);
+  const ap = plotPicker('a-plot-wrap', 'a-plot', 'fillAdd', plotId);
+  $('a-btn').disabled = isNaN(ap);
   document.querySelectorAll('#add-form .admin-only').forEach(e => e.style.display = isAdmin() ? '' : 'none');
   if (!$('a-date').value) $('a-date').value = localIso();
   $('a-date').max = localIso();
@@ -567,7 +588,7 @@ async function submitAdd() {
 function renderPay(plotId) {
   if (!session) { $('pay-prompt').style.display = ''; $('pay-form').style.display = 'none'; return; }
   $('pay-prompt').style.display = 'none'; $('pay-form').style.display = '';
-  plotPicker('pay-plot-wrap', 'pay-plot', 'fillPay', plotId);
+  if (isNaN(plotPicker('pay-plot-wrap', 'pay-plot', 'fillPay', plotId))) { $('pay-btn').disabled = true; $('pay-info').textContent = ''; return; }
   fillPay();
 }
 function fillPay() {
@@ -608,7 +629,7 @@ function renderPwd() {
   if (!isAdmin()) return;
   $('pwd-list').innerHTML = plots.map(p => {
     const code = pendingPwd ? pendingPwd[p.id] : (p.storedPwd || '—');
-    return `<div class="pwd-row"><div style="min-width:0">${plotLabel(p)}</div><div><span class="pwd-code" ${!pendingPwd && !p.storedPwd ? 'style="color:var(--text3)"' : ''}>${esc(code)}</span>${pendingPwd ? ' <span class="badge bwarn">новый</span>' : ''}</div></div>`;
+    return `<div class="pwd-row"><div style="min-width:0">${plotLabel(p)}${act(p) ? '' : ' <span class="badge berr">отключён</span>'}</div><div><span class="pwd-code" ${!pendingPwd && !p.storedPwd ? 'style="color:var(--text3)"' : ''}>${esc(code)}</span>${pendingPwd ? ' <span class="badge bwarn">новый</span>' : ''}</div></div>`;
   }).join('') || '<div class="empty">Загрузка…</div>';
   $('btn-save-pwd').style.display = $('btn-cancel-pwd').style.display = pendingPwd ? '' : 'none';
 }
@@ -633,6 +654,28 @@ async function savePwd() {
 }
 
 /* ─── настройки (администратор) ─── */
+function renderCfgPlots() {
+  if (!isAdmin()) return;
+  $('cfg-plots').innerHTML = plots.map(p => {
+    const l = lastR(p);
+    return `<div class="sw-row"><div style="min-width:0"><div class="nm">${plotLabel(p)}</div><div class="sm" id="sw-st${p.id}">${act(p) ? 'включён' : '<span class="neg">отключён</span>'} · ${l ? 'баланс ' + money(l.balance) : 'записей нет'}</div></div>
+      <label class="sw" title="${act(p) ? 'Выключить' : 'Включить'}"><input type="checkbox" id="sw${p.id}" ${act(p) ? 'checked' : ''} onchange="togglePlot(${p.id}, this)" aria-label="Участок ${esc(shortName(p.name))} включён"><span></span></label></div>`;
+  }).join('') || '<div class="empty">Нет участков</div>';
+}
+async function togglePlot(id, el) {
+  const p = byId(id); if (!p || !isAdmin()) return;
+  const on = el.checked;
+  if (!on && !confirm(`Отключить участок «${shortName(p.name)}»? Он пропадёт из сводки, а код владельца перестанет действовать. Записи сохранятся.`)) { el.checked = true; return; }
+  el.disabled = true;
+  try {
+    const d = await apiPost({ action: 'setPlotActive', plotId: id, active: on });
+    if (d.error) throw new Error(d.error);
+    p.active = on; toast(`Участок «${shortName(p.name)}» ${on ? 'включён' : 'отключён'}`);
+    await load(true);
+  } catch (e) { el.checked = !on; toast('Ошибка: ' + e.message, true); }
+  el.disabled = false;
+}
+
 async function saveTariff() {
   if (!isAdmin()) return;
   const t = num($('cfg-tariff').value);

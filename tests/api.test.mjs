@@ -46,6 +46,18 @@ ok(adm.plots.every(p => 'storedPwd' in p), 'администратор види�
 ok((await post({ action: 'addRecord', token: la.token, plotId: other, reading: Number(adm.plots.find(p => p.id === other).records.filter(r => r.reading > 0).pop().reading) + 1, topup: 0, date: today })).ok, 'администратор вносит по любому участку');
 ok((await post({ action: 'setTariff', token: la.token, tariff: 0 })).error, 'тариф 0 — отказ');
 
+console.log('Включение и выключение участков:');
+const tok = la.token;
+ok((await post({ action: 'setPlotActive', token: T, plotId: my, active: false })).error?.includes('администратора'), 'владелец не может выключать участки');
+ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: false })).ok, 'администратор выключил участок');
+ok((await get({ action: 'getData' })).plots.length === 12, 'без входа выключенного участка не видно (12)');
+ok((await get({ action: 'getData', token: tok })).plots.find(p => p.id === my)?.active === false, 'администратор видит его с пометкой');
+ok(String((await post({ action: 'checkPassword', password: '1111' })).error || '').includes('отключён'), 'код владельца выключенного участка не действует');
+ok((await post({ action: 'updatePayment', token: T, plotId: my, topup: 10 })).error?.includes('отключён'), 'старая сессия владельца — записи запрещены');
+ok((await post({ action: 'updatePayment', token: tok, plotId: my, topup: 10 })).ok, 'администратор может вносить по выключенному');
+ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: true })).ok && (await get({ action: 'getData' })).plots.length === 13, 'включён обратно — снова 13');
+ok((await post({ action: 'checkPassword', password: '1111' })).ok, 'код владельца снова действует');
+
 console.log('Совместимость со старой страницей (по названию):');
 const legacy = await post({ action: 'updatePayment', token: la.token, plotName: adm.plots.find(p => p.id === other).name, topup: 1 });
 ok(legacy.ok, 'запрос по plotName работает');

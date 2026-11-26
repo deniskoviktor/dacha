@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS plots (
   sort_order  INTEGER NOT NULL DEFAULT 0
 );
 
+-- Участок можно отключить (продан, не участвует): скрыт для всех, кроме администратора, код владельца не действует
+ALTER TABLE plots ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
+
 CREATE TABLE IF NOT EXISTS records (
   id              SERIAL PRIMARY KEY,    -- порядок записей внутри участка
   plot_id         INTEGER NOT NULL REFERENCES plots(id) ON DELETE CASCADE,

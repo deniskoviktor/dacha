@@ -12,7 +12,7 @@ async function run(label, ctxOpts, fn) {
   const errors = []; let alerts = 0;
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|tabler|jsdelivr/.test(m.text())) errors.push(m.text()); });
-  page.on('dialog', async (d) => { if (d.type() === 'alert') alerts++; await d.accept(); });
+  page.on('dialog', async (d) => { if (d.type() === 'alert') alerts++; try { await d.accept(); } catch {} });
   await page.goto(URL, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => document.getElementById('st').textContent.startsWith('Обновлено'));
   await fn(page);
@@ -82,6 +82,19 @@ await run('Компьютер, администратор (9999):', { viewport: 
   await p.click('nav.tabs [data-p=pl]'); await p.locator('.pc').nth(1).locator('.pch').click();
   ok(await p.locator('.pc.open .recs-d table').isVisible(), 'история — таблицей на компьютере');
   await p.screenshot({ path: `${OUT}/6-администратор-компьютер.png`, fullPage: false });
+  await p.click('#nav-cfg');
+  ok(await p.locator('#cfg-plots .sw-row').count() === 13, 'в настройках — переключатели 13 участков');
+  await p.locator('#cfg-plots .sw input').first().click();
+  await p.waitForFunction(() => document.querySelector('#cfg-plots .sw-row .sm')?.textContent.includes('отключён'));
+  await p.click('nav.tabs [data-p=ov]');
+  ok((await p.locator('#ov-m .met').first().innerText()).includes('+1 выкл'), 'сводка: 12 участков и «+1 выкл.»');
+  ok(await p.locator('#ov-d .row').count() === 12, 'в балансах выключенного нет');
+  await p.click('nav.tabs [data-p=pl]');
+  ok(await p.locator('.pc.off').count() === 1, 'в списке — приглушён и помечен «отключён»');
+  await p.click('#nav-cfg'); await p.locator('#cfg-plots .sw input').first().click();
+  await p.waitForFunction(() => !document.querySelector('#cfg-plots .sw-row .sm')?.textContent.includes('отключён'));
+  ok(true, 'включён обратно');
+  await p.screenshot({ path: `${OUT}/7-настройки-участки.png`, fullPage: true });
 });
 
 await browser.close();
