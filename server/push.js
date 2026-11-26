@@ -1,13 +1,15 @@
 /*
  * Push-уведомления дачникам (Web Push): долг или давно нет показаний и по оценке баланс ушёл в минус.
- * Только владельцам участков (администратору — нет). Не чаще одного раза в сутки на устройство,
- * рассылка раз в день после PUSH_HOUR (по умолчанию 11:00 Алматы), до 20:00.
+ * Только владельцам участков (администратору — нет). Одному устройству — не чаще раза в PUSH_EVERY_DAYS дней
+ * (по умолчанию 7, раз в неделю). Проверка раз в день после PUSH_HOUR (11:00 Алматы), до 20:00 — новый должник
+ * получает первое напоминание на следующий день, дальше — раз в неделю, пока долг не погашен.
  */
 const webpush = require('web-push');
 const { pool, fromIsoDate } = require('./db');
 
 const TZ_OFFSET_H = 5; // Алматы, UTC+5
 const PUSH_HOUR = Number(process.env.PUSH_HOUR || 11);
+const PUSH_EVERY_DAYS = Number(process.env.PUSH_EVERY_DAYS || 7);
 const PUBLIC_URL = process.env.PUBLIC_URL || 'https://dacha.82-115-48-98.sslip.io';
 const MS_MONTH = 864e5 * 30.4;
 const log = (...a) => console.log(new Date().toISOString(), 'push:', ...a);
@@ -84,18 +86,19 @@ async function sendTo(sub, body, tag = 'dacha-balance') {
   }
 }
 
-/** Ежедневная рассылка: каждому устройству не чаще раза в сутки (по дню Алматы). */
+const dayNum = t => Math.floor((t + TZ_OFFSET_H * 3600e3) / 864e5); // номер дня по Алматы
+/** Рассылка: каждому устройству не чаще раза в PUSH_EVERY_DAYS дней (по дням Алматы). */
 let running = false;
 async function runDaily() {
   if (!ready || running) return { sent: 0, skipped: 0, busy: true };
   running = true;
   try {
-    const states = await plotStates(), today = almatyDay();
+    const states = await plotStates();
     const subs = (await pool.query('SELECT s.* FROM push_subs s JOIN plots p ON p.id = s.plot_id AND p.active')).rows;
     let sent = 0, skipped = 0;
     for (const s of subs) {
       const text = message(states.get(s.plot_id));
-      if (!text || (s.last_sent_at && almatyDay(new Date(s.last_sent_at).getTime()) === today)) { skipped++; continue; }
+      if (!text || (s.last_sent_at && dayNum(Date.now()) - dayNum(new Date(s.last_sent_at).getTime()) < PUSH_EVERY_DAYS)) { skipped++; continue; }
       if (await sendTo(s, text)) { sent++; await pool.query('UPDATE push_subs SET last_sent_at=now() WHERE id=$1', [s.id]); }
     }
     await pool.query("INSERT INTO settings(key, value) VALUES ('push_last_run',$1) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value", [new Date().toISOString()]);
@@ -135,7 +138,7 @@ async function stats() {
   const states = await plotStates();
   const subs = (await pool.query('SELECT plot_id, count(*)::int n, max(last_sent_at) last FROM push_subs GROUP BY plot_id')).rows;
   const last = (await pool.query("SELECT value FROM settings WHERE key='push_last_run'")).rows[0]?.value || null;
-  return { lastRun: last, hour: PUSH_HOUR, plots: subs.map(s => ({ plotId: s.plot_id, devices: s.n, lastSent: s.last, due: !!message(states.get(s.plot_id)) })),
+  return { lastRun: last, hour: PUSH_HOUR, everyDays: PUSH_EVERY_DAYS, plots: subs.map(s => ({ plotId: s.plot_id, devices: s.n, lastSent: s.last, due: !!message(states.get(s.plot_id)) })),
     due: [...states].filter(([, s]) => message(s)).map(([id]) => id) };
 }
 
