@@ -1,0 +1,65 @@
+# Стек «Автоматизация дача» для NAS (Dockge / docker compose).
+# Перед запуском: скопируйте .env.example в .env и заполните пароли.
+name: dacha
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dacha
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?задайте DB_PASSWORD в .env}
+      POSTGRES_DB: dacha
+      TZ: ${TZ:-Asia/Almaty}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dacha -d dacha"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    image: dacha-app:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: dacha
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: dacha
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?задайте ADMIN_PASSWORD в .env}
+      SESSION_SECRET: ${SESSION_SECRET:?задайте SESSION_SECRET в .env}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      SESSION_HOURS: ${SESSION_HOURS:-12}
+      TZ: ${TZ:-Asia/Almaty}
+    ports:
+      - "${APP_PORT:-8095}:8080"
+
+  # Ежедневная копия базы в ./backups, хранятся последние 30 дней
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: dacha
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: dacha
+      TZ: ${TZ:-Asia/Almaty}
+    volumes:
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/dacha_$$(date +%Y-%m-%d_%H%M).sql.gz
+          pg_dump --no-owner | gzip > "$$f" && echo "Копия: $$f"
+          find /backups -name 'dacha_*.sql.gz' -mtime +30 -delete
+          sleep 86400
+        done

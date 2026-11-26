@@ -190,7 +190,7 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
     <div class="divider"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="genPwd()"><i class="ti ti-refresh"></i> Сгенерировать новые</button>
-      <button class="btn" id="btn-save-pwd" style="display:none" onclick="savePwd()"><i class="ti ti-device-floppy"></i> Сохранить в таблицу</button>
+      <button class="btn" id="btn-save-pwd" style="display:none" onclick="savePwd()"><i class="ti ti-device-floppy"></i> Сохранить в базу</button>
     </div>
     <div id="pwd-msg"></div>
   </div>
@@ -208,16 +208,16 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
     <div id="tariff-msg"></div>
   </div>
   <div class="card">
-    <div class="ct">Подключение к Google Sheets</div>
-    <div class="fg" style="margin-bottom:10px"><label>URL Apps Script</label><input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="ct">Подключение к серверу (NAS)</div>
+    <div class="fg" style="margin-bottom:10px"><label>Адрес API</label><input type="text" id="cfg-url" placeholder="https://dacha.example.ru/api"></div>
     <button class="btn btn-p" onclick="saveUrl()"><i class="ti ti-check"></i> Сохранить</button>
     <div id="cfg-msg"></div>
     <div class="divider"></div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.7">Таблица → Расширения → Apps Script → Развернуть → Управление развёртываниями → скопировать URL</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7">Данные хранятся в базе PostgreSQL на NAS. Оставьте поле пустым и сохраните, чтобы вернуть адрес по умолчанию.</div>
   </div>
   <div class="card">
     <div class="ct">Данные</div>
-    <button class="btn" onclick="load()"><i class="ti ti-refresh"></i> Перезагрузить из Sheets</button>
+    <button class="btn" onclick="load()"><i class="ti ti-refresh"></i> Перезагрузить данные</button>
   </div>
 </div>
 
@@ -239,14 +239,30 @@ input[readonly]{background:var(--bg2);color:var(--text2)}
 
 </div><!-- .shell -->
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBYRqeHlYOqR1iYxL1QpVpuqehvez0qFj0ckCLOG-8Q7us6ie6o2fzcMmVcmozgil4Yw/exec';
-const ADMIN_PWD  = '4588';
-const APP_VER    = '9'; // ← увеличьте на 1 при каждом обновлении Apps Script
+// Адрес сервера на NAS (база PostgreSQL). Если страница открыта с самого NAS — используется он же.
+// Для страницы на GitHub Pages впишите сюда внешний HTTPS-адрес NAS, например 'https://dacha.example.ru/api'.
+const NAS_API_URL = '';
+const DEFAULT_API = /github\.io$/.test(location.hostname) || location.protocol === 'file:' ? NAS_API_URL : location.origin + '/api';
 
-let url     = localStorage.getItem('dacha_url') || SCRIPT_URL;
+let url     = localStorage.getItem('dacha_api') || DEFAULT_API;
 let plots   = [], busy = false, tariff = 36;
 let session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null');
+if (session && !session.token) session = null; // старая сессия без токена
 let pendingPwd = null;
+
+/* ─── запросы к серверу ─── */
+async function apiGet(action, params={}) {
+  const q = new URLSearchParams({action, ...params});
+  if (session?.token) q.set('token', session.token);
+  const r = await fetch(url+'?'+q.toString());
+  return r.json();
+}
+async function apiPost(body) {
+  const r = await fetch(url, {method:'POST', body:JSON.stringify({...body, token:session?.token})});
+  const d = await r.json();
+  if (d.error === 'Требуется вход') { session=null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
+  return d;
+}
 
 /* ─── utils ─── */
 const fmt = n => Number(n).toLocaleString('ru-RU');
@@ -302,26 +318,20 @@ function clearErr()   { document.getElementById('login-err').innerHTML=''; }
 async function doLogin() {
   const pin = document.getElementById('pin').value.trim();
   if (!pin) return;
-  if (pin === ADMIN_PWD) {
-    session = {role:'admin'};
-    sessionStorage.setItem('dacha_sess', JSON.stringify(session));
-    closeLogin(); updateUI(); renderAdd(); renderPayPage();
-    return;
-  }
   try {
-    const r = await fetch(url+'?action=checkPassword&v='+APP_VER+'&password='+encodeURIComponent(pin));
-    const d = await r.json();
-    if (d.ok && d.role==='owner') {
-      session = {role:'owner', plotName:d.plotName};
+    const d = await apiPost({action:'checkPassword', password:pin});
+    if (d.ok && (d.role==='owner' || d.role==='admin')) {
+      session = d.role==='admin' ? {role:'admin', token:d.token} : {role:'owner', plotName:d.plotName, token:d.token};
       sessionStorage.setItem('dacha_sess', JSON.stringify(session));
       closeLogin(); updateUI(); renderAdd(); renderPayPage();
+      if (d.role==='admin') load(); // подтянуть коды участников
     } else {
-      document.getElementById('login-err').innerHTML='<div class="msg merr">Неверный код</div>';
+      document.getElementById('login-err').innerHTML='<div class="msg merr">'+(d.error||'Неверный код')+'</div>';
     }
   } catch(e) { document.getElementById('login-err').innerHTML='<div class="msg merr">Ошибка соединения</div>'; }
 }
 
-function logout() { session=null; sessionStorage.removeItem('dacha_sess'); updateUI(); renderAdd(); renderPayPage(); go('ov'); }
+function logout() { session=null; sessionStorage.removeItem('dacha_sess'); pendingPwd=null; plots.forEach(p=>delete p.storedPwd); updateUI(); renderAdd(); renderPayPage(); go('ov'); }
 
 /* ─── nav ─── */
 const PAGES = ['ov','pl','add','pay','pwd','cfg'];
@@ -341,12 +351,12 @@ async function load() {
   if (busy) return; busy=true;
   setS('spin','Загрузка...');
   try {
-    const r = await fetch(url+'?action=getData&v='+APP_VER);
-    const d = await r.json();
+    if (!url) throw new Error('не указан адрес сервера (Настройки)');
+    const d = await apiGet('getData');
     if (d.error) throw new Error(d.error);
     plots = normPlots((d.plots||[]).filter(p=>p.name&&!p.name.startsWith('Дата')));
     // Загружаем тариф
-    try { const tr=await fetch(url+'?action=getTariff&v='+APP_VER); const td=await tr.json(); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
+    try { const td=await apiGet('getTariff'); if(td.tariff) tariff=Number(td.tariff); } catch(e){}
     setS('ok','Обновлено в '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}));
     renderOv();
     if(document.getElementById('pg-pl').classList.contains('active'))  renderPl();
@@ -497,13 +507,12 @@ async function submitAdd(){
   const btn=document.getElementById('a-btn');
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
   try{
-    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify(body)});
-    const d=await r.json();if(d.error)throw new Error(d.error);
+    const d=await apiPost(body);if(d.error)throw new Error(d.error);
     msgEl.innerHTML=`<div class="msg mok">Записано! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
     ['a-read','a-topup','a-chk','a-note'].forEach(id=>document.getElementById(id).value='');
     await load();fillPrev();
   }catch(e){msgEl.innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в Google Sheets';
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить';
 }
 
 /* ─── payment ─── */
@@ -547,8 +556,7 @@ async function submitPay(){
   const btn=document.getElementById('pay-btn');
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';msgEl.innerHTML='';
   try{
-    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify(body)});
-    const d=await r.json();if(d.error)throw new Error(d.error);
+    const d=await apiPost(body);if(d.error)throw new Error(d.error);
     msgEl.innerHTML=`<div class="msg mok">Оплата внесена! Новый баланс: <strong>${fmt(Math.round(d.newBalance))} ₸</strong></div>`;
     ['pay-amount','pay-chk','pay-note'].forEach(id=>document.getElementById(id).value='');
     await load();fillPayInfo();
@@ -586,14 +594,13 @@ async function savePwd(){
   btn.disabled=true;btn.innerHTML='<i class="ti ti-loader ti-spin"></i> Сохраняем...';
   try{
     const pwdMap=pendingPwd.map(p=>({plotName:p.name,password:p.newPwd}));
-    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify({action:'savePasswords',passwords:pwdMap})});
-    const d=await r.json();if(d.error)throw new Error(d.error);
-    document.getElementById('pwd-msg').innerHTML='<div class="msg mok">Пароли сохранены в таблицу!</div>';
+    const d=await apiPost({action:'savePasswords',passwords:pwdMap});if(d.error)throw new Error(d.error);
+    document.getElementById('pwd-msg').innerHTML='<div class="msg mok">Пароли сохранены в базу!</div>';
     setTimeout(()=>document.getElementById('pwd-msg').innerHTML='',3000);
     pendingPwd=null;btn.style.display='none';
     await load();renderPwd();
   }catch(e){document.getElementById('pwd-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
-  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в таблицу';
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Сохранить в базу';
 }
 
 /* ─── settings ─── */
@@ -602,16 +609,15 @@ async function saveTariff(){
   const t=parseFloat(document.getElementById('cfg-tariff').value);
   if(!t||t<=0){document.getElementById('tariff-msg').innerHTML='<div class="msg merr">Введите корректный тариф</div>';return;}
   try{
-    const r=await fetch(url+'?v='+APP_VER,{method:'POST',body:JSON.stringify({action:'setTariff',tariff:t})});
-    const d=await r.json();if(d.error)throw new Error(d.error);
+    const d=await apiPost({action:'setTariff',tariff:t});if(d.error)throw new Error(d.error);
     tariff=t;
     document.getElementById('tariff-msg').innerHTML=`<div class="msg mok">Тариф сохранён: ${t} ₸/кВт·ч</div>`;
     setTimeout(()=>document.getElementById('tariff-msg').innerHTML='',3000);
   }catch(e){document.getElementById('tariff-msg').innerHTML=`<div class="msg merr">Ошибка: ${e.message}</div>`;}
 }
 function saveUrl(){
-  const v=document.getElementById('cfg-url').value.trim();if(!v)return;
-  url=v;localStorage.setItem('dacha_url',v);
+  const v=document.getElementById('cfg-url').value.trim();
+  if(v){url=v;localStorage.setItem('dacha_api',v);}else{url=DEFAULT_API;localStorage.removeItem('dacha_api');}
   document.getElementById('cfg-msg').innerHTML='<div class="msg mok">Сохранено</div>';
   setTimeout(()=>document.getElementById('cfg-msg').innerHTML='',2500);
   load();
