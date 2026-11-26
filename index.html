@@ -210,7 +210,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 
 <nav class="tabs" id="tabs">
   <button class="nb active" data-p="ov" onclick="go('ov')"><i class="ti ti-layout-dashboard"></i><span>Сводка</span></button>
-  <button class="nb" data-p="pl" onclick="go('pl')"><i class="ti ti-chart-bar"></i><span id="nb-pl">Участки</span></button>
+  <button class="nb" data-p="pl" onclick="go('pl')"><i class="ti ti-chart-bar"></i><span id="nb-pl">Статистика</span></button>
   <button class="nb" data-p="add" onclick="go('add')"><i class="ti ti-gauge"></i><span>Показания</span></button>
   <button class="nb" data-p="pay" onclick="go('pay')"><i class="ti ti-cash"></i><span>Оплата</span></button>
   <button class="nb" data-p="pwd" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i><span>Коды</span></button>
@@ -362,7 +362,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 17:20</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 17:40</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -440,7 +440,6 @@ function updateUI() {
   $('btn-logout').style.display = session ? '' : 'none';
   $('nav-pwd').style.display = isAdmin() ? '' : 'none';
   $('nav-cfg').style.display = isAdmin() ? '' : 'none';
-  $('nb-pl').textContent = isAdmin() ? 'Участки' : 'Мой участок';
   if (session) {
     b.style.display = '';
     if (isAdmin()) { b.className = 'ubadge admin hide-m'; b.innerHTML = '<i class="ti ti-shield"></i> Администратор'; }

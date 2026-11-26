@@ -70,7 +70,7 @@ await run('Телефон, владелец (код 1111):', { ...devices['iPhon
   ok((await p.locator('#pay-msg').innerText()).includes('Оплата внесена'), 'пополнение на 300 сохранено');
   await p.screenshot({ path: `${OUT}/4-оплата.png`, fullPage: true });
   await p.click('nav.tabs [data-p=pl]');
-  ok((await p.locator('#nb-pl').innerText()) === 'Мой участок', 'вкладка называется «Мой участок»');
+  ok((await p.locator('#nb-pl').innerText()) === 'Статистика', 'вкладка называется «Статистика»');
   ok(await p.locator('#pl-pick').count() === 0, 'владелец не выбирает участок — видит только свой');
   ok(await p.locator('#pl-c1 svg .col').count() >= 1 && await p.locator('#pl-c2 svg .col path').count() > 0, 'графики по месяцам: расход и начислено/оплачено');
   ok(!/Эмир/.test(await p.locator('#pl-list').innerText()), 'чужих участков на вкладке нет');
