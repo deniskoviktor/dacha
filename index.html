@@ -384,7 +384,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 19:45</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 20:00</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -598,13 +598,14 @@ function renderOv() {
   if (!live.length) { $('ov-m').innerHTML = ''; $('ov-d').innerHTML = $('ov-r').innerHTML = '<div class="empty">Нет данных</div>'; return; }
   let debt = 0, cred = 0, dn = 0, overdue = 0;
   let estimated = 0;
-  live.forEach(p => { const l = lastR(p); if (!l) return; const e = estOf(p), b = e.est; if (e.stale) estimated += e.cost; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
+  // долг — по показаниям; из переплат вычитаем оценку расхода тех, кто давно не передаёт показания
+  live.forEach(p => { const l = lastR(p); if (!l) return; const e = estOf(p), b = e.bal; if (e.stale) estimated += e.cost; if (b < 0) { debt -= b; dn++; } else cred += b; if (stale(p)) overdue++; });
+  cred -= estimated;
   $('ov-m').innerHTML = `
     <div class="met"><div class="ml">Участков</div><div class="mv">${live.length}${plots.length > live.length ? `<span class="mu">+${plots.length - live.length} выкл.</span>` : ''}</div></div>
     <div class="met"><div class="ml">Должников</div><div class="mv ${dn ? 'neg' : ''}">${dn}</div></div>
-    <div class="met"><div class="ml">Общий долг${estimated ? ' (с оценкой)' : ''}</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
-    <div class="met"><div class="ml">Переплаты${estimated ? ' (с оценкой)' : ''}</div><div class="mv pos">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
-    ${estimated ? `<div class="met" title="Средний расход × месяцы без показаний × тариф — уже учтено в долге и переплатах"><div class="ml">Не передано (оценка)</div><div class="mv">≈ ${fmt(estimated)}<span class="mu">₸</span></div></div>` : ''}
+    <div class="met"><div class="ml">Общий долг</div><div class="mv ${debt ? 'neg' : ''}">${fmt(Math.round(debt))}<span class="mu">₸</span></div></div>
+    <div class="met"${estimated ? ` title="Переплаты по показаниям минус ≈ ${fmt(estimated)} ₸ — оценка расхода тех, кто давно не передаёт показания"` : ''}><div class="ml">Переплаты${estimated ? ' (с оценкой)' : ''}</div><div class="mv ${cred >= 0 ? 'pos' : 'neg'}">${fmt(Math.round(cred))}<span class="mu">₸</span></div></div>
     <div class="met ${overdue ? 'warn' : ''}"><div class="ml">Нет показаний более 2 мес.</div><div class="mv ${overdue ? 'neg' : ''}">${overdue}</div></div>`;
   const sorted = live.filter(lastR).sort((a, b) => estOf(a).est - estOf(b).est);
   $('ov-d').innerHTML = (sorted.some(p => estOf(p).stale) ? '<div class="sm" style="font-size:12px;color:var(--text2);margin-bottom:4px">≈ — оценка: кто давно не передаёт показания, тому за это время начислен его средний расход.</div>' : '') + sorted.map(p => {
