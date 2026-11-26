@@ -50,3 +50,18 @@ CREATE TABLE IF NOT EXISTS audit_log (
   action      TEXT NOT NULL,
   details     JSONB
 );
+
+-- Журнал входов (видит только администратор): login — вход по коду, visit — заход с запомненного устройства
+-- (не чаще раза в 30 мин), fail — неверный код, blocked — заблокирован за подбор. Сам введённый код не хранится.
+CREATE TABLE IF NOT EXISTS login_log (
+  id         BIGSERIAL PRIMARY KEY,
+  at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  kind       TEXT NOT NULL,
+  ip         TEXT NOT NULL DEFAULT '',
+  ua         TEXT NOT NULL DEFAULT '',
+  role       TEXT,
+  plot_id    INTEGER REFERENCES plots(id) ON DELETE SET NULL,
+  plot_name  TEXT
+);
+CREATE INDEX IF NOT EXISTS login_log_at_idx ON login_log(at DESC);
+DELETE FROM login_log WHERE at < now() - interval '2 years';

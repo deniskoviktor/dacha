@@ -92,6 +92,29 @@ ok((await get({ action: 'getData', token: T })).plots.length === 14, 'владе
 console.log('Совместимость со старой страницей (по названию):');
 const legacy = await post({ action: 'updatePayment', token: la.token, plotName: adm.plots.find(p => p.id === other).name, topup: 1 });
 ok(legacy.ok, 'запрос по plotName работает');
+console.log('Запомненный вход и журнал входов:');
+{
+  const A = (await post({ action: 'checkPassword', password: '9999' })).token;
+  const o = await post({ action: 'checkPassword', password: '1111' });
+  const exp = JSON.parse(Buffer.from(o.token.split('.')[0], 'base64url').toString()).exp;
+  ok(exp - Date.now() > 300 * 864e5, 'вход запоминается надолго (больше 300 дней)');
+  ok(!(await get({ action: 'getData', token: o.token })).locked, 'с запомненным токеном данные открываются');
+  const L = await get({ action: 'getLogins', token: A, days: 1 });
+  ok(Array.isArray(L.rows) && L.rows.some(r => r.kind === 'login' && r.role === 'owner' && r.ip), 'журнал: вход владельца с IP', JSON.stringify(L.rows?.[0]));
+  ok(L.rows.some(r => r.kind === 'fail'), 'журнал: неверный код записан');
+  ok(L.rows.some(r => r.kind === 'visit'), 'журнал: заход с запомненного устройства');
+  ok(!JSON.stringify(L).includes('"0000"') && L.rows.every(r => !('password' in r)), 'введённые коды в журнал не попадают');
+  ok((await get({ action: 'getLogins', token: o.token })).error?.includes('администратора'), 'журнал владельцу недоступен');
+  ok((await get({ action: 'getLogins' })).error?.includes('администратора'), 'журнал без входа недоступен');
+  // смена кода выкидывает запомненные устройства
+  const ad = await get({ action: 'getData', token: A });
+  const pl = ad.plots.find(p => p.id === o.plotId);
+  ok((await post({ action: 'savePlot', token: A, plotId: pl.id, ownerName: pl.ownerName, number: pl.number, phone: pl.phone, password: '4321' })).ok, 'админ сменил код участка');
+  ok((await get({ action: 'getData', token: o.token })).locked === true, 'после смены кода старый вход не действует');
+  ok((await post({ action: 'updatePayment', token: o.token, plotId: pl.id, topup: 5 })).error === 'Требуется вход', 'и записи со старым входом запрещены');
+  ok((await post({ action: 'savePlot', token: A, plotId: pl.id, ownerName: pl.ownerName, number: pl.number, phone: pl.phone, password: '1111' })).ok, 'код возвращён');
+}
+
 console.log('Защита от подбора кода:');
 let last; for (let i = 0; i < 11; i++) last = await post({ action: 'checkPassword', password: '00' + i });
 ok(String(last.error || '').includes('Слишком много'), 'после 10 неверных кодов — блокировка');

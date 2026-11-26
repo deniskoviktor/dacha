@@ -34,7 +34,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?задайте ADMIN_PASSWORD в .env}
       SESSION_SECRET: ${SESSION_SECRET:?задайте SESSION_SECRET в .env}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
-      SESSION_HOURS: ${SESSION_HOURS:-12}
+      SESSION_HOURS: ${SESSION_HOURS:-8760}   # вход запоминается на год (продлевается при заходах)
       TZ: ${TZ:-Asia/Almaty}
     ports:
       - "${APP_PORT:-8095}:8080"

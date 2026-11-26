@@ -11,7 +11,9 @@ const { pool, initSchema, tx, toIsoDate, fromIsoDate, num, composePlotName } = r
 const PORT = Number(process.env.PORT || 8080);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
-const SESSION_HOURS = Number(process.env.SESSION_HOURS || 12);
+// вход запоминается на устройстве: токен на год, продлевается сам при заходах; «Выйти» — забыть.
+// Смена кода участка (или пароля администратора) сразу выкидывает все устройства, вошедшие со старым кодом.
+const SESSION_HOURS = Number(process.env.SESSION_HOURS || 24 * 365);
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim()).filter(Boolean);
 const STATIC_DIR = process.env.STATIC_DIR || path.join(__dirname, '..');
 
@@ -54,6 +56,47 @@ function readToken(token) {
     const s = JSON.parse(Buffer.from(payload, 'base64url').toString());
     return s.exp > Date.now() ? s : null;
   } catch { return null; }
+}
+
+/** «Версия» кода в токене: без самого кода, но меняется при его смене */
+const pv = password => crypto.createHmac('sha256', SECRET).update('pv:' + String(password || '')).digest('base64url').slice(0, 12);
+/** Токен + проверка, что код не меняли и участок не отключён (для владельца) */
+async function readSession(token) {
+  const s = readToken(token);
+  if (!s) return null;
+  if (s.role === 'admin') return ADMIN_PASSWORD && s.pv === pv(ADMIN_PASSWORD) ? s : null;
+  if (s.role === 'owner') {
+    const r = (await pool.query('SELECT password, active FROM plots WHERE id=$1', [s.plotId])).rows[0];
+    return r && r.password && s.pv === pv(r.password) ? s : null;
+  }
+  return null;
+}
+const freshToken = s => { const { exp, ...rest } = s; return makeToken(rest); };
+
+/* ─── журнал входов: кто, когда, с какого адреса (видит только администратор) ─── */
+const uaOf = req => String(req.get('user-agent') || '').slice(0, 300);
+const cleanIp = ip => String(ip || '').replace(/^::ffff:/, '');
+async function logEntry(kind, ip, ua, sess, extra = {}) {
+  try {
+    await pool.query('INSERT INTO login_log(kind, ip, ua, role, plot_id, plot_name) VALUES ($1,$2,$3,$4,$5,$6)',
+      [kind, cleanIp(ip), ua || '', sess?.role || extra.role || null, sess?.plotId || null, sess?.plotName || extra.plotName || null]);
+  } catch (e) { console.error('журнал входов:', e.message); }
+}
+// заход с запомненного устройства — не чаще раза в 30 минут на участок+адрес
+const lastVisit = new Map();
+function logVisit(req, sess) {
+  const key = `${sess.role}:${sess.plotId || ''}:${req.ip}`, now = Date.now();
+  if (now - (lastVisit.get(key) || 0) < 30 * 60_000) return;
+  lastVisit.set(key, now);
+  if (lastVisit.size > 5000) lastVisit.clear();
+  logEntry('visit', req.ip, uaOf(req), sess);
+}
+async function getLogins(sess, q) {
+  needAdmin(sess);
+  const days = Math.min(Math.max(Number(q.days) || 30, 1), 3650);
+  const rows = (await pool.query(`SELECT l.id, l.at, l.kind, l.ip, l.ua, l.role, l.plot_id, COALESCE(p.name, l.plot_name) AS plot_name, p.plot_number
+    FROM login_log l LEFT JOIN plots p ON p.id = l.plot_id WHERE l.at > now() - make_interval(days => $1) ORDER BY l.at DESC LIMIT 3000`, [days])).rows;
+  return { days, rows: rows.map(r => ({ ...r, at: r.at.toISOString() })) };
 }
 
 /* ─── защита от подбора кодов: 10 неверных попыток за 15 минут с одного адреса ─── */
@@ -173,22 +216,30 @@ async function getData(sess) {
   };
 }
 
-async function checkPassword(password, ip) {
-  if (tooManyFails(ip)) throw new UserError('Слишком много попыток, попробуйте через 15 минут');
+async function checkPassword(password, ip, ua = '') {
+  if (tooManyFails(ip)) { await logEntry('blocked', ip, ua, null); throw new UserError('Слишком много попыток, попробуйте через 15 минут'); }
   password = String(password || '').trim();
   if (!password) return { ok: false };
   if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
     fails.delete(ip);
-    return { ok: true, role: 'admin', token: makeToken({ role: 'admin' }) };
+    const sess = { role: 'admin', pv: pv(ADMIN_PASSWORD) };
+    await logEntry('login', ip, ua, sess);
+    return { ok: true, role: 'admin', token: makeToken(sess) };
   }
   const r = await pool.query('SELECT id, name, active FROM plots WHERE password=$1', [password]);
-  if (r.rows.length === 1 && !r.rows[0].active) { addFail(ip); throw new UserError('Участок отключён — обратитесь к администратору'); }
+  if (r.rows.length === 1 && !r.rows[0].active) {
+    addFail(ip); await logEntry('fail', ip, ua, null, { role: 'owner', plotName: r.rows[0].name + ' (отключён)' });
+    throw new UserError('Участок отключён — обратитесь к администратору');
+  }
   if (r.rows.length === 1) {
     fails.delete(ip);
     const { id: plotId, name } = r.rows[0];
-    return { ok: true, role: 'owner', plotId, plotName: publicName(name), token: makeToken({ role: 'owner', plotId, plotName: name }) };
+    const sess = { role: 'owner', plotId, plotName: name, pv: pv(password) };
+    await logEntry('login', ip, ua, sess);
+    return { ok: true, role: 'owner', plotId, plotName: publicName(name), token: makeToken(sess) };
   }
   addFail(ip);
+  await logEntry('fail', ip, ua, null);
   return { ok: false };
 }
 
@@ -358,12 +409,21 @@ function wrap(fn) {
 }
 
 app.get('/api', wrap(async req => {
-  const sess = readToken(req.query.token);
+  const sess = await readSession(req.query.token);
   switch (req.query.action) {
-    case 'getData': return getData(sess);
+    case 'getData': {
+      const d = await getData(sess);
+      if (sess) {
+        logVisit(req, sess);
+        // продлеваем запомненный вход, когда прошла половина срока
+        if (sess.exp - Date.now() < SESSION_HOURS * 1800 * 1000) d.token = freshToken(sess);
+      }
+      return d;
+    }
+    case 'getLogins': return getLogins(sess, req.query);
     case 'summary': return getSummary();
     case 'getTariff': return { tariff: await getTariff() };
-    case 'checkPassword': return checkPassword(req.query.password, req.ip);
+    case 'checkPassword': return checkPassword(req.query.password, req.ip, uaOf(req));
     case 'whoami': return sess ? { ok: true, role: sess.role, plotId: sess.plotId, plotName: publicName(sess.plotName) } : { ok: false };
     default: throw new UserError('Неизвестное действие');
   }
@@ -373,9 +433,9 @@ app.post('/api', wrap(async req => {
   let b;
   try { b = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}); }
   catch { throw new UserError('Неверный формат запроса'); }
-  const sess = readToken(b.token);
+  const sess = await readSession(b.token);
   switch (b.action) {
-    case 'checkPassword': return checkPassword(b.password, req.ip);
+    case 'checkPassword': return checkPassword(b.password, req.ip, uaOf(req));
     case 'addRecord': return addRecord(sess, b);
     case 'updatePayment': return updatePayment(sess, b);
     case 'savePasswords': return savePasswords(sess, b);

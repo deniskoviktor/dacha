@@ -40,6 +40,10 @@ await run('Телефон, владелец (код 1111):', { ...devices['iPhon
   await p.fill('#pin', '1111'); await p.click('#login-btn');
   await p.waitForSelector('#ov-mine .mine');
   ok(!(await p.evaluate(() => document.body.classList.contains('locked'))), 'после входа размытие снято');
+  const p2 = await p.context().newPage(); await p2.goto(URL, { waitUntil: 'networkidle' });
+  await p2.waitForFunction(() => document.getElementById('st').textContent.startsWith('Обновлено'));
+  ok(!(await p2.evaluate(() => document.body.classList.contains('locked'))) && await p2.locator('#ov-mine .mine').count() === 1, 'новая вкладка на том же устройстве — без кода');
+  await p2.close();
   ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position === 'fixed'), 'вкладки внизу экрана');
   ok(!/\+?7\d{10}/.test((await p.locator('#pg-ov').innerText()).replace(/\s/g, '')), 'телефонов на странице нет');
   ok(await p.locator('#ov-d .row').count() === 13, 'в балансах 13 участков');
@@ -94,6 +98,13 @@ await run('Компьютер, администратор (9999):', { viewport: 
   ok(await p.locator('#a-prev').isVisible() && await p.locator('#a-price').isVisible(), 'администратору видны цена и предыдущее показание');
   await p.click('nav.tabs [data-p=pl]');
   ok(await p.locator('#pl-pick option').count() === 13, 'администратор выбирает любой из 13 участков');
+  await p.click('#nav-log'); await p.waitForSelector('#log-list .lr');
+  ok(await p.locator('#log-list .lr').count() > 0 && /\d+\.\d+\.\d+\.\d+|:/.test(await p.locator('#log-list .ipb').first().innerText()), 'журнал входов: записи с IP');
+  ok((await p.locator('#log-who').innerText()).includes('Администратор'), 'кто когда заходил последний раз');
+  await p.click('#log-kind button:has-text("Ошибки")');
+  ok((await p.locator('#log-list').innerText()).includes('Неверный код'), 'фильтр «Ошибки»');
+  await p.screenshot({ path: `${OUT}/8-журнал-входов.png`, fullPage: true });
+  await p.click('nav.tabs [data-p=pl]');
   const second = await p.locator('#pl-pick option').nth(1).getAttribute('value');
   await p.selectOption('#pl-pick', second);
   ok(await p.locator('#pl-c1 svg').isVisible() && (await p.locator('#pl-pick').inputValue()) === second, 'график выбранного участка');
@@ -125,7 +136,7 @@ await run('Компьютер, администратор (9999):', { viewport: 
   await p.fill('#pe-name', 'Тестов Т.Т.'); await p.fill('#pe-num', '77'); await p.fill('#pe-phone', '87011234567'); await p.fill('#pe-read', '1200'); await p.fill('#pe-bal', '500');
   await p.screenshot({ path: `${OUT}/8-новый-дачник.png` });
   await p.click('#pe-btn');
-  await p.waitForFunction(() => document.querySelectorAll('#cfg-plots .sw-row').length === 14, null, { timeout: 10000 }).catch(() => {});
+  await p.waitForFunction(() => document.querySelectorAll('#cfg-plots .sw-row').length === 14 && document.getElementById('cfg-plots').textContent.includes('+77011234567'), null, { timeout: 10000 }).catch(() => {});
   ok((await p.locator('#cfg-plots').innerText()).includes('Тестов Т.Т.'), 'новый дачник появился в списке');
   ok((await p.locator('#cfg-plots').innerText()).includes('+77011234567'), 'телефон приведён к виду +7…');
   await p.click('#pg-cfg button:has-text("Добавить дачника")'); await p.fill('#pe-name', 'Дубль'); await p.fill('#pe-num', '77'); await p.click('#pe-btn');

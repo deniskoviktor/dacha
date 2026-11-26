@@ -72,7 +72,7 @@ tr:last-child td{border-bottom:none}
 .amt{font-weight:650;white-space:nowrap;font-variant-numeric:tabular-nums}
 .pos{color:var(--green)}.neg{color:var(--red)}
 .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:550;white-space:nowrap}
-.bok{background:var(--green-bg);color:var(--green)}.berr{background:var(--red-bg);color:var(--red)}.bwarn{background:var(--amber-bg);color:var(--amber)}
+.bok{background:var(--green-bg);color:var(--green)}.berr{background:var(--red-bg);color:var(--red)}.bwarn{background:var(--amber-bg);color:var(--amber)}.binfo{background:var(--blue-bg);color:var(--blue)}
 /* участки */
 .pc{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:10px;overflow:hidden}
 .pch{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;width:100%;background:none;border:0;color:inherit;text-align:left;font-size:inherit}
@@ -160,6 +160,11 @@ body.locked .lg-cancel{display:none}
 .ctip b{font-variant-numeric:tabular-nums}.ctip .sw,.legend .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .legend{display:flex;gap:14px;font-size:13px;color:var(--text2);margin:-4px 0 8px;flex-wrap:wrap}
 .mt td,.mt th{padding:7px 8px}.mt{font-size:13px}
+.lr{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--border)}.lr:first-child{border-top:0}
+.lr .t{font-variant-numeric:tabular-nums;color:var(--text2);font-size:13px;min-width:92px}
+.lr .w{flex:1;min-width:0}.lr .w .n{font-weight:600}.lr .w .m{font-size:12.5px;color:var(--text2);word-break:break-word}
+.ipb{border:0;background:var(--bg2);color:inherit;border-radius:6px;padding:1px 6px;font:inherit;font-size:12.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+@media(max-width:640px){#log-kpi{grid-template-columns:repeat(2,1fr)!important}.lr .t{min-width:78px}}
 details.hist>summary{cursor:pointer;font-weight:650;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px}
 details.hist>summary::-webkit-details-marker{display:none}
 details.hist[open]>summary .chev{transform:rotate(180deg)}
@@ -178,6 +183,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0;gap:0;flex-wrap:nowrap;background:var(--bg);border-top:1px solid var(--border);padding:4px 4px env(safe-area-inset-bottom);height:calc(var(--tabh) + env(safe-area-inset-bottom))}
   .nb{flex:1;flex-direction:column;gap:2px;border:0;border-radius:var(--r);padding:6px 2px;font-size:11px;min-width:0}
   .nb i{font-size:22px}
+  .nb span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .nb.active{background:var(--bg2)}
   .g2{grid-template-columns:1fr}
   .metrics{grid-template-columns:1fr 1fr;gap:8px}
@@ -214,6 +220,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
   <button class="nb" data-p="add" onclick="go('add')"><i class="ti ti-gauge"></i><span>Показания</span></button>
   <button class="nb" data-p="pay" onclick="go('pay')"><i class="ti ti-cash"></i><span>Оплата</span></button>
   <button class="nb" data-p="pwd" id="nav-pwd" style="display:none" onclick="go('pwd')"><i class="ti ti-key"></i><span>Коды</span></button>
+  <button class="nb" data-p="log" id="nav-log" style="display:none" onclick="go('log')"><i class="ti ti-history"></i><span>Входы</span></button>
   <button class="nb" data-p="cfg" id="nav-cfg" style="display:none" onclick="go('cfg')"><i class="ti ti-settings"></i><span>Настройки</span></button>
 </nav>
 
@@ -230,6 +237,21 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 <!-- УЧАСТКИ -->
 <div id="pg-pl" class="page">
   <div id="pl-list"><div class="loading">Загрузка…</div></div>
+</div>
+
+<!-- ВХОДЫ (администратор) -->
+<div id="pg-log" class="page">
+  <div class="seg" id="log-days"></div>
+  <div class="kpis" id="log-kpi" style="grid-template-columns:repeat(4,1fr)"></div>
+  <div class="card"><div class="ct"><i class="ti ti-users"></i> Кто когда заходил последний раз</div><div id="log-who"></div></div>
+  <div class="card"><div class="ct"><i class="ti ti-list-details"></i> Журнал</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div class="seg" id="log-kind" style="margin:0"></div>
+      <input type="search" id="log-q" placeholder="Участок, имя или IP" autocomplete="off" style="flex:1;min-width:160px" oninput="renderLog()">
+    </div>
+    <div id="log-list"><div class="loading">Загрузка…</div></div>
+    <p class="sub" style="margin:10px 0 0">«Вход» — по коду; «Заход» — с устройства, где вход запомнен (не чаще раза в 30 минут). Введённые неверные коды не сохраняются. Время — Алматы.</p>
+  </div>
 </div>
 
 <!-- ПОКАЗАНИЯ -->
@@ -362,7 +384,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 17:40</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 18:30</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -373,7 +395,10 @@ let url = localStorage.getItem('dacha_api') || DEFAULT_API;
 let locked = false;
 let plots = [], busy = false, tariff = 36, pendingPwd = null;
 let session = null;
-try { session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null'); } catch { session = null; }
+// вход запоминается на этом устройстве (до «Выйти»); старые вкладки — из sessionStorage
+const store = { get() { try { return localStorage.getItem('dacha_sess') || sessionStorage.getItem('dacha_sess'); } catch { return null; } },
+  set(v) { try { localStorage.setItem('dacha_sess', v); } catch {} }, del() { try { localStorage.removeItem('dacha_sess'); store.del(); } catch {} } };
+try { session = JSON.parse(store.get() || 'null'); } catch { session = null; }
 // старая сессия без токена или без номера участка — войти заново
 if (session && (!session.token || (session.role === 'owner' && !session.plotId))) session = null;
 
@@ -399,7 +424,7 @@ async function apiPost(body) {
   const r = await fetch(url, { method: 'POST', body: JSON.stringify({ ...body, token: session?.token }) });
   if (!r.ok) throw new Error('сервер ответил ' + r.status);
   const d = await r.json();
-  if (d.error === 'Требуется вход') { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); setTimeout(() => load(true), 0); }
+  if (d.error === 'Требуется вход') { session = null; store.del(); updateUI(); setTimeout(() => load(true), 0); }
   return d;
 }
 
@@ -440,6 +465,7 @@ function updateUI() {
   $('btn-logout').style.display = session ? '' : 'none';
   $('nav-pwd').style.display = isAdmin() ? '' : 'none';
   $('nav-cfg').style.display = isAdmin() ? '' : 'none';
+  $('nav-log').style.display = isAdmin() ? '' : 'none';
   if (session) {
     b.style.display = '';
     if (isAdmin()) { b.className = 'ubadge admin hide-m'; b.innerHTML = '<i class="ti ti-shield"></i> Администратор'; }
@@ -463,7 +489,7 @@ async function doLogin() {
     const d = await apiPost({ action: 'checkPassword', password: pin });
     if (d.ok && (d.role === 'owner' || d.role === 'admin')) {
       session = d.role === 'admin' ? { role: 'admin', token: d.token } : { role: 'owner', plotId: d.plotId, plotName: d.plotName, token: d.token };
-      sessionStorage.setItem('dacha_sess', JSON.stringify(session));
+      store.set(JSON.stringify(session));
       locked = false; document.body.classList.remove('locked'); closeLogin(); updateUI();
       toast(isAdmin() ? 'Вы вошли как администратор' : 'Здравствуйте! Участок: ' + shortName(d.plotName));
       await load(true);
@@ -472,13 +498,13 @@ async function doLogin() {
   } catch (e) { $('login-err').innerHTML = '<div class="msg merr">Нет связи с сервером</div>'; }
   btn.disabled = false;
 }
-function logout() { session = null; sessionStorage.removeItem('dacha_sess'); pendingPwd = null; updateUI(); load(true); go('ov'); }
+function logout() { session = null; store.del(); pendingPwd = null; updateUI(); load(true); go('ov'); }
 
 /* ─── навигация ─── */
-const PAGES = ['ov', 'pl', 'add', 'pay', 'pwd', 'cfg'];
+const PAGES = ['ov', 'pl', 'add', 'pay', 'pwd', 'log', 'cfg'];
 let current = 'ov';
 function go(id, plotId) {
-  if ((id === 'pwd' || id === 'cfg') && !isAdmin()) id = 'ov';
+  if ((id === 'pwd' || id === 'cfg' || id === 'log') && !isAdmin()) id = 'ov';
   current = id;
   PAGES.forEach(p => $('pg-' + p).classList.toggle('active', p === id));
   document.querySelectorAll('.nb').forEach(b => b.classList.toggle('active', b.dataset.p === id));
@@ -491,6 +517,7 @@ function render(id = current, plotId) {
   if (id === 'add') renderAdd(plotId);
   if (id === 'pay') renderPay(plotId);
   if (id === 'pwd') renderPwd();
+  if (id === 'log') loadLog();
   if (id === 'cfg') { $('cfg-url').value = url; $('cfg-tariff').value = tariff; renderCfgPlots(); }
 }
 
@@ -503,8 +530,9 @@ async function load(quiet) {
     const d = await apiGet('getData');
     if (d.error) throw new Error(d.error);
     // сессия истекла или нет входа — размытая заглушка и окно входа
-    if (d.locked && session) { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
+    if (d.locked && session) { session = null; store.del(); updateUI(); }
     setLocked(!!d.locked);
+    if (d.token && session) { session.token = d.token; store.set(JSON.stringify(session)); } // продлённый вход
     plots = d.locked ? DUMMY : (d.plots || []).filter(p => p.name && !String(p.name).startsWith('Дата'));
     plots.forEach(p => (p.records || []).forEach(r => { r.date = normDate(r.date); }));
     try { const t = await apiGet('getTariff'); if (t.tariff) tariff = Number(t.tariff); } catch {}
@@ -548,6 +576,51 @@ function renderOv() {
 }
 
 /* ─── участки ─── */
+/* ─── журнал входов (администратор) ─── */
+const logState = { days: 7, kind: 'all', rows: [], loadedDays: 0 };
+const KIND = { login: ['Вход', 'bok'], visit: ['Заход', 'binfo'], fail: ['Неверный код', 'berr'], blocked: ['Блокировка', 'berr'] };
+function uaShort(ua) {
+  if (!ua) return 'устройство неизвестно';
+  const dev = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'другое';
+  const br = /YaBrowser/.test(ua) ? 'Яндекс' : /SamsungBrowser/.test(ua) ? 'Samsung' : /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox|FxiOS/.test(ua) ? 'Firefox' : /Telegram/.test(ua) ? 'Telegram' : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : /curl|node|python/i.test(ua) ? 'программа' : '';
+  return dev + (br ? ', ' + br : '');
+}
+const whoOf = r => r.role === 'admin' ? 'Администратор' : r.plot_name ? String(r.plot_name).replace(/\(\s*\+?[\d\s()-]{7,}\)/, '').replace(/\s{2,}/g, ' ').trim() : r.kind === 'fail' || r.kind === 'blocked' ? 'неизвестный код' : '—';
+const atStr = (iso, withDay = true) => new Date(iso).toLocaleString('ru-RU', { timeZone: 'Asia/Almaty', ...(withDay ? { day: '2-digit', month: '2-digit' } : {}), hour: '2-digit', minute: '2-digit' });
+async function loadLog() {
+  if (!isAdmin()) return;
+  $('log-days').innerHTML = [[1, 'Сегодня'], [7, '7 дней'], [30, '30 дней'], [365, 'Год']].map(([v, t]) => `<button class="${logState.days === v ? 'on' : ''}" onclick="logState.days=${v};loadLog()">${t}</button>`).join('');
+  $('log-kind').innerHTML = [['all', 'Все'], ['in', 'Входы'], ['bad', 'Ошибки']].map(([v, t]) => `<button class="${logState.kind === v ? 'on' : ''}" onclick="logState.kind='${v}';loadLog()">${t}</button>`).join('');
+  if (logState.loadedDays < logState.days || Date.now() - (logState.at || 0) > 30_000) {
+    $('log-list').innerHTML = '<div class="loading">Загрузка…</div>';
+    try {
+      const d = await apiGet('getLogins', { days: Math.max(logState.days, 30) });
+      if (d.error) throw new Error(d.error);
+      logState.rows = d.rows; logState.loadedDays = d.days; logState.at = Date.now();
+    } catch (e) { $('log-list').innerHTML = `<div class="msg merr">${esc(e.message)}</div>`; return; }
+  }
+  renderLog();
+}
+function renderLog() {
+  const since = logState.days === 1 ? new Date(new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Almaty' }) + 'T00:00:00+05:00').getTime() : Date.now() - logState.days * 864e5;
+  const inPeriod = logState.rows.filter(r => new Date(r.at).getTime() >= since);
+  const q = ($('log-q').value || '').trim().toLowerCase();
+  const rows = inPeriod.filter(r => (logState.kind === 'all' || (logState.kind === 'in' ? r.kind === 'login' || r.kind === 'visit' : r.kind === 'fail' || r.kind === 'blocked'))
+    && (!q || (whoOf(r) + ' ' + r.ip + ' уч. ' + (r.plot_number || '')).toLowerCase().includes(q)));
+  const cnt = k => inPeriod.filter(r => k.includes(r.kind)).length;
+  $('log-kpi').innerHTML = [['Входов по коду', cnt(['login'])], ['Заходов', cnt(['visit'])], ['Ошибок кода', cnt(['fail', 'blocked'])], ['Разных IP', new Set(inPeriod.map(r => r.ip)).size]]
+    .map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${fmt(v)}</div></div>`).join('');
+  // последний заход по каждому участку (за загруженный период) и администратор
+  const last = new Map();
+  for (const r of logState.rows) if ((r.kind === 'login' || r.kind === 'visit')) { const k = r.role === 'admin' ? 'admin' : r.plot_id; if (k && !last.has(k)) last.set(k, r); }
+  const who = [{ k: 'admin', name: 'Администратор' }, ...plots.filter(act).map(p => ({ k: p.id, name: ownerOf(p) + (plotNo(p) ? ' · уч. ' + plotNo(p) : '') }))];
+  const ts = x => last.get(x.k) ? new Date(last.get(x.k).at).getTime() : 0;
+  who.sort((a, b) => ts(b) - ts(a)); // сначала недавние, внизу — кто не заходил
+  $('log-who').innerHTML = who.map(x => { const r = last.get(x.k); return `<div class="lr"><div class="w"><div class="n">${esc(x.name)}</div><div class="m">${r ? `${atStr(r.at)} · <button class="ipb" onclick="logIp('${esc(r.ip)}')">${esc(r.ip)}</button> · ${esc(uaShort(r.ua))}` : 'не заходил за ' + (logState.loadedDays >= 365 ? 'год' : logState.loadedDays + ' дней')}</div></div></div>`; }).join('');
+  $('log-list').innerHTML = rows.length ? rows.slice(0, 500).map(r => { const [t, c] = KIND[r.kind] || [r.kind, '']; return `<div class="lr"><div class="t">${atStr(r.at)}</div><div class="w"><div class="n">${esc(whoOf(r))} <span class="badge ${c}">${t}</span></div><div class="m"><button class="ipb" onclick="logIp('${esc(r.ip)}')">${esc(r.ip || '—')}</button> · ${esc(uaShort(r.ua))}</div></div></div>`; }).join('') + (rows.length > 500 ? '<div class="sub" style="margin-top:8px">Показаны последние 500 — уточните поиск.</div>' : '') : '<div class="empty">За этот период записей нет</div>';
+}
+function logIp(ip) { $('log-q').value = ip; renderLog(); $('log-list').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
 /* ─── участок: только свой (админ — любой), графики по месяцам ─── */
 const plState = { id: null, range: 12 };
 const MON = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
