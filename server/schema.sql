@@ -65,3 +65,16 @@ CREATE TABLE IF NOT EXISTS login_log (
 );
 CREATE INDEX IF NOT EXISTS login_log_at_idx ON login_log(at DESC);
 DELETE FROM login_log WHERE at < now() - interval '2 years';
+
+-- Push-уведомления владельцам (Web Push): одно устройство — одна строка; last_sent_at — не чаще раза в сутки
+CREATE TABLE IF NOT EXISTS push_subs (
+  id            BIGSERIAL PRIMARY KEY,
+  plot_id       INTEGER NOT NULL REFERENCES plots(id) ON DELETE CASCADE,
+  endpoint      TEXT NOT NULL UNIQUE,
+  p256dh        TEXT NOT NULL,
+  auth          TEXT NOT NULL,
+  ua            TEXT NOT NULL DEFAULT '',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_sent_at  TIMESTAMPTZ,
+  fails         INTEGER NOT NULL DEFAULT 0
+);

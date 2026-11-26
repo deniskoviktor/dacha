@@ -40,6 +40,9 @@ await run('Телефон, владелец (код 1111):', { ...devices['iPhon
   await p.fill('#pin', '1111'); await p.click('#login-btn');
   await p.waitForSelector('#ov-mine .mine');
   ok(!(await p.evaluate(() => document.body.classList.contains('locked'))), 'после входа размытие снято');
+  await p.waitForSelector('#ov-mine .push-box button, #ov-mine .push-box .pmeta', { timeout: 5000 }).catch(() => {});
+  ok(await p.locator('#ov-mine .push-box').innerText().then(t => /уведомлени/i.test(t)), 'владельцу предложено включить уведомления');
+  ok(await p.evaluate(() => navigator.serviceWorker.getRegistration().then(r => !!r)), 'service worker зарегистрирован');
   const p2 = await p.context().newPage(); await p2.goto(URL, { waitUntil: 'networkidle' });
   await p2.waitForFunction(() => document.getElementById('st').textContent.startsWith('Обновлено'));
   ok(!(await p2.evaluate(() => document.body.classList.contains('locked'))) && await p2.locator('#ov-mine .mine').count() === 1, 'новая вкладка на том же устройстве — без кода');
@@ -118,7 +121,10 @@ await run('Компьютер, администратор (9999):', { viewport: 
   await p.click('details.hist summary');
   ok(await p.locator('details.hist .recs-d table').isVisible(), 'история — таблицей на компьютере');
   await p.screenshot({ path: `${OUT}/6-администратор-компьютер.png`, fullPage: false });
+  ok(await p.locator('.push-box').count() === 0, 'администратору кнопки уведомлений нет');
   await p.click('#nav-cfg');
+  await p.waitForSelector('#cfg-push .pmeta');
+  ok((await p.locator('#cfg-push').innerText()).includes('Подписано устройств'), 'настройки: статистика уведомлений');
   ok(await p.locator('#cfg-plots .sw-row').count() === 13, 'в настройках — переключатели 13 участков');
   await p.locator('#cfg-plots .sw input').first().click();
   await p.waitForFunction(() => document.querySelector('#cfg-plots .sw-row .sm')?.textContent.includes('отключён'));

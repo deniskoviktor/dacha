@@ -115,6 +115,27 @@ console.log('Запомненный вход и журнал входов:');
   ok((await post({ action: 'savePlot', token: A, plotId: pl.id, ownerName: pl.ownerName, number: pl.number, phone: pl.phone, password: '1111' })).ok, 'код возвращён');
 }
 
+console.log('Push-уведомления:');
+{
+  const A = (await post({ action: 'checkPassword', password: '9999' })).token;
+  const o = await post({ action: 'checkPassword', password: '1111' });
+  const k = await get({ action: 'pushKey' });
+  ok(typeof k.key === 'string' && k.key.length > 60, 'публичный ключ VAPID');
+  const sub = { endpoint: 'https://push.invalid/test-' + Date.now(), keys: { p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', auth: 'tBHItJI5svbpez7KI4CCXg' } };
+  ok((await post({ action: 'pushSubscribe', token: A, sub })).error?.includes('владельцев'), 'администратор подписаться не может');
+  ok((await post({ action: 'pushSubscribe', sub })).error, 'без входа подписаться нельзя');
+  ok((await post({ action: 'pushSubscribe', token: o.token, sub: { endpoint: 'http://x' } })).error === 'Неверная подписка', 'кривая подписка — отказ');
+  ok((await post({ action: 'pushSubscribe', token: o.token, sub })).ok, 'владелец подписал устройство');
+  const st = await get({ action: 'pushStats', token: A });
+  ok(st.plots.some(x => x.plotId === o.plotId && x.devices === 1), 'админ видит подписанное устройство');
+  ok(Array.isArray(st.due) && st.due.length > 0, 'есть участки, кому положено уведомление', JSON.stringify(st.due));
+  ok((await get({ action: 'pushStats', token: o.token })).error, 'владельцу статистика недоступна');
+  const r = await post({ action: 'pushRunNow', token: A });
+  ok(typeof r.sent === 'number' && typeof r.skipped === 'number', 'рассылка запускается', JSON.stringify(r));
+  ok((await post({ action: 'pushRunNow', token: o.token })).error, 'владелец рассылку не запускает');
+  ok((await post({ action: 'pushUnsubscribe', endpoint: sub.endpoint })).ok && !(await get({ action: 'pushStats', token: A })).plots.some(x => x.plotId === o.plotId), 'отписка удаляет устройство');
+}
+
 console.log('Защита от подбора кода:');
 let last; for (let i = 0; i < 11; i++) last = await post({ action: 'checkPassword', password: '00' + i });
 ok(String(last.error || '').includes('Слишком много'), 'после 10 неверных кодов — блокировка');

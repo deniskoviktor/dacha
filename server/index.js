@@ -7,6 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const { pool, initSchema, tx, toIsoDate, fromIsoDate, num, composePlotName } = require('./db');
+const push = require('./push');
 
 const PORT = Number(process.env.PORT || 8080);
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
@@ -421,6 +422,8 @@ app.get('/api', wrap(async req => {
       return d;
     }
     case 'getLogins': return getLogins(sess, req.query);
+    case 'pushKey': return { key: await push.publicKey() };
+    case 'pushStats': needAdmin(sess); return push.stats();
     case 'summary': return getSummary();
     case 'getTariff': return { tariff: await getTariff() };
     case 'checkPassword': return checkPassword(req.query.password, req.ip, uaOf(req));
@@ -442,6 +445,16 @@ app.post('/api', wrap(async req => {
     case 'setTariff': return setTariff(sess, b);
     case 'setPlotActive': return setPlotActive(sess, b);
     case 'savePlot': return savePlot(sess, b);
+    // уведомления: только владельцы участков (администратору не шлём)
+    case 'pushSubscribe':
+      if (!sess || sess.role !== 'owner') throw new UserError('Уведомления — только для владельцев участков');
+      try { await push.subscribe(sess, b.sub, uaOf(req)); } catch { throw new UserError('Неверная подписка'); }
+      return { ok: true };
+    case 'pushUnsubscribe': await push.unsubscribe(b.endpoint); return { ok: true };
+    case 'pushTest':
+      if (!sess || sess.role !== 'owner') throw new UserError('Требуется вход владельца');
+      return { ok: await push.testOwn(sess, b.endpoint) };
+    case 'pushRunNow': needAdmin(sess); return push.runDaily();
     default: throw new UserError('Неизвестное действие');
   }
 }));
@@ -451,13 +464,15 @@ app.get('/healthz', async (req, res) => {
 });
 
 // Сама страница и инструкции — тот же index.html, что на GitHub
-app.get(['/', '/index.html', '/instrukciya_polzovatelya.pdf', '/instrukciya_polzovatelya1.pdf'], (req, res) => {
+app.get(['/', '/index.html', '/instrukciya_polzovatelya.pdf', '/instrukciya_polzovatelya1.pdf', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'], (req, res) => {
   const f = req.path === '/' ? 'index.html' : req.path.slice(1);
-  // страницу браузер всегда перепроверяет — после обновления сразу видна новая версия
-  if (f === 'index.html') res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  // страницу и service worker браузер всегда перепроверяет — после обновления сразу видна новая версия
+  if (f === 'index.html' || f === 'sw.js') res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  if (f === 'manifest.webmanifest') res.type('application/manifest+json');
   res.sendFile(path.join(STATIC_DIR, f));
 });
 
-initSchema().then(() => {
+initSchema().then(async () => {
+  await push.init(); push.schedule();
   app.listen(PORT, () => console.log(`Дача: сервер запущен на порту ${PORT}`));
 }).catch(e => { console.error('Не удалось подготовить базу:', e); process.exit(1); });
