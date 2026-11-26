@@ -42,19 +42,28 @@ async function main() {
 
   // Те же фильтры, что в index.html: пустые и служебные строки («Дата…») пропускаем
   const plots = (data.plots || []).filter(p => p.name && !String(p.name).startsWith('Дата'));
+  // Ячейка с числом, отформатированная в Таблице как дата, приходит из Apps Script миллисекундами от «нулевой»
+  // даты Таблицы 30.12.1899 (в поясе Таблицы). Пересчитываем обратно в число и сообщаем о каждом таком случае.
+  const SHEETS_ZERO = new Date(1899, 11, 30).getTime();
+  const fixedCells = [];
+  const cellNum = (v, where) => {
+    if (typeof v === 'number' && Math.abs(v) > 1e11) { const d = Math.round(((v - SHEETS_ZERO) / 864e5) * 100) / 100; fixedCells.push(`${where} = ${d}`); return d; }
+    return num(v);
+  };
   let recCount = 0, badDates = 0, noPwd = 0;
   const prepared = plots.map((p, i) => {
     if (!p.storedPwd) noPwd++;
     const records = (p.records || []).map(r => {
+      const at = (f) => `${String(p.name).trim()}, ${r.date || '?'}, ${f}`;
       const iso = toIsoDate(r.date);
       if (!iso && r.date) badDates++;
-      const reading = num(r.reading), consumption = num(r.consumption);
+      const reading = cellNum(r.reading, at('показание')), consumption = cellNum(r.consumption, at('расход'));
       return {
         date: iso, date_raw: iso ? null : (r.date ? normDate(r.date) : null),
         reading,
-        prev_reading: r.prevReading !== undefined && r.prevReading !== '' ? num(r.prevReading) : Math.max(0, reading - consumption),
-        consumption, price: num(r.price), cost: num(r.cost), topup: num(r.topup),
-        balance_before: num(r.balanceBefore), balance: num(r.balance),
+        prev_reading: r.prevReading !== undefined && r.prevReading !== '' ? cellNum(r.prevReading, at('пред. показание')) : Math.max(0, reading - consumption),
+        consumption, price: cellNum(r.price, at('цена')), cost: cellNum(r.cost, at('стоимость')), topup: cellNum(r.topup, at('пополнение')),
+        balance_before: cellNum(r.balanceBefore, at('баланс до')), balance: cellNum(r.balance, at('баланс')),
         check_num: String(r.checkNum ?? '').trim(), note: String(r.note ?? '').trim(),
       };
     });
@@ -63,6 +72,7 @@ async function main() {
   });
 
   console.log(`Участков: ${prepared.length}, записей: ${recCount}, тариф: ${tariff ?? '(не найден, останется прежний)'}`);
+  if (fixedCells.length) console.log(`Ячейки в формате даты пересчитаны в числа (${fixedCells.length}):\n  ${fixedCells.join('\n  ')}`);
   if (badDates) console.log(`Дат, которые не удалось разобрать (сохранены как текст): ${badDates}`);
   if (noPwd) console.log(`Участков без кода владельца: ${noPwd}`);
   const names = new Set();
