@@ -24,18 +24,25 @@ const noHScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
 
 await run('Телефон (iPhone 13), без входа:', { ...devices['iPhone 13'] }, async (p) => {
   ok(await noHScroll(p), 'нет горизонтальной прокрутки');
-  ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position === 'fixed'), 'вкладки внизу экрана');
-  const txt = await p.locator('#pg-ov').innerText();
-  ok(!/\+?7\d{10}/.test(txt.replace(/\s/g, '')), 'телефонов на странице нет');
-  ok(await p.locator('#ov-d .row').count() === 13, 'в балансах 13 участков');
+  ok(await p.evaluate(() => document.body.classList.contains('locked')), 'без входа страница размыта');
+  ok(await p.locator('#overlay').isVisible() && await p.locator('#pin').evaluate((e) => e === document.activeElement), 'окно входа по центру, курсор в поле кода');
+  ok(await p.locator('#overlay .lg-cancel').isHidden(), 'кнопки «Отмена» нет');
+  await p.mouse.click(5, 5); ok(await p.locator('#overlay').isVisible(), 'клик мимо окна его не закрывает');
+  ok(!(await p.locator('#pg-ov').innerText()).includes('Эмир'), 'под размытием — заглушка, настоящих данных нет');
+  await p.fill('#pin', '0000'); await p.click('#login-btn'); await p.waitForSelector('#login-err .msg');
+  ok(await p.evaluate(() => document.body.classList.contains('locked')), 'неверный код — остаётся размыто');
   const fs = await p.locator('#pin').evaluate((e) => getComputedStyle(e).fontSize);
   ok(parseFloat(fs) >= 16, 'поле ввода не меньше 16px (iPhone не увеличивает страницу)');
   await p.screenshot({ path: `${OUT}/1-сводка-телефон.png`, fullPage: true });
 });
 
 await run('Телефон, владелец (код 1111):', { ...devices['iPhone 13'] }, async (p) => {
-  await p.click('#btn-login'); await p.fill('#pin', '1111'); await p.click('#login-btn');
+  await p.fill('#pin', '1111'); await p.click('#login-btn');
   await p.waitForSelector('#ov-mine .mine');
+  ok(!(await p.evaluate(() => document.body.classList.contains('locked'))), 'после входа размытие снято');
+  ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position === 'fixed'), 'вкладки внизу экрана');
+  ok(!/\+?7\d{10}/.test((await p.locator('#pg-ov').innerText()).replace(/\s/g, '')), 'телефонов на странице нет');
+  ok(await p.locator('#ov-d .row').count() === 13, 'в балансах 13 участков');
   ok(await p.locator('#ov-mine').innerText().then((t) => t.includes('Мой участок')), 'после входа — карточка «Мой участок»');
   await p.screenshot({ path: `${OUT}/2-мой-участок.png`, fullPage: true });
   await p.click('#ov-mine button:has-text("Показания")');
@@ -71,7 +78,7 @@ await run('Телефон, владелец (код 1111):', { ...devices['iPhon
 });
 
 await run('Компьютер, администратор (9999):', { viewport: { width: 1280, height: 900 } }, async (p) => {
-  await p.click('#btn-login'); await p.fill('#pin', '9999'); await p.press('#pin', 'Enter');
+  await p.fill('#pin', '9999'); await p.press('#pin', 'Enter');
   await p.waitForSelector('#nav-pwd:visible');
   ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position !== 'fixed'), 'вкладки сверху');
   await p.click('#nav-pwd');

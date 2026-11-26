@@ -7,17 +7,22 @@ const today = new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10).split
 const future = new Date(Date.now() + 5 * 3600e3 + 3 * 86400e3).toISOString().slice(0, 10).split('-').reverse().join('.');
 
 console.log('Без входа:');
-const anon = await get({ action: 'getData' });
-ok(anon.plots.length === 13, 'сводка: 13 участков');
-ok(anon.plots.every(p => !/\+?\d{10,}/.test(p.name.replace(/\s/g, ''))), 'в названиях нет телефонов', anon.plots.map(p => p.name).join('; '));
-ok(anon.plots.every(p => !('storedPwd' in p)), 'коды не отдаются');
-ok(anon.plots.every(p => Number.isInteger(p.id)), 'у участков есть id');
-ok((await post({ action: 'addRecord', plotId: anon.plots[0].id, reading: 1, topup: 0, date: today })).error === 'Требуется вход', 'запись без входа — отказ');
+const locked = await get({ action: 'getData' });
+ok(locked.locked === true && locked.plots.length === 0, 'без входа данные не отдаются (locked)');
+ok((await get({ action: 'getData', token: 'подделка.abc' })).locked === true, 'поддельный токен — тоже ничего');
+const sum = await get({ action: 'summary' });
+ok(Array.isArray(sum.stale) && Array.isArray(sum.debt) && JSON.stringify(sum).length < 400 && !/[а-яА-Я]/.test(JSON.stringify(sum)), 'summary: только номера участков', JSON.stringify(sum));
+ok((await post({ action: 'addRecord', plotId: 1, reading: 1, topup: 0, date: today })).error === 'Требуется вход', 'запись без входа — отказ');
 
 console.log('Владелец (код 1111):');
 const lo = await post({ action: 'checkPassword', password: '1111' });
 ok(lo.ok && lo.role === 'owner' && lo.plotId, 'вход владельца, plotId=' + lo.plotId);
 const T = lo.token, my = lo.plotId;
+const anon = await get({ action: 'getData', token: T }); // владелец видит сводку по всем — без телефонов и кодов
+ok(anon.plots.length === 13, 'сводка: 13 участков');
+ok(anon.plots.every(p => !/\+?\d{10,}/.test(p.name.replace(/\s/g, ''))), 'в названиях нет телефонов', anon.plots.map(p => p.name).join('; '));
+ok(anon.plots.every(p => !('storedPwd' in p) && !('phone' in p)), 'коды и телефоны не отдаются');
+ok(anon.plots.every(p => Number.isInteger(p.id)), 'у участков есть id');
 const other = anon.plots.find(p => p.id !== my).id;
 const mine0 = anon.plots.find(p => p.id === my); const last0 = mine0.records.filter(r => r.reading > 0).pop();
 const r1 = await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 10, topup: 0, date: today, note: '<img src=x onerror=alert(1)>' });
@@ -50,12 +55,12 @@ console.log('Включение и выключение участков:');
 const tok = la.token;
 ok((await post({ action: 'setPlotActive', token: T, plotId: my, active: false })).error?.includes('администратора'), 'владелец не может выключать участки');
 ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: false })).ok, 'администратор выключил участок');
-ok((await get({ action: 'getData' })).plots.length === 12, 'без входа выключенного участка не видно (12)');
+ok((await get({ action: 'getData', token: T })).plots.length === 12, 'владельцу выключенного участка не видно (12)');
 ok((await get({ action: 'getData', token: tok })).plots.find(p => p.id === my)?.active === false, 'администратор видит его с пометкой');
 ok(String((await post({ action: 'checkPassword', password: '1111' })).error || '').includes('отключён'), 'код владельца выключенного участка не действует');
 ok((await post({ action: 'updatePayment', token: T, plotId: my, topup: 10 })).error?.includes('отключён'), 'старая сессия владельца — записи запрещены');
 ok((await post({ action: 'updatePayment', token: tok, plotId: my, topup: 10 })).ok, 'администратор может вносить по выключенному');
-ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: true })).ok && (await get({ action: 'getData' })).plots.length === 13, 'включён обратно — снова 13');
+ok((await post({ action: 'setPlotActive', token: tok, plotId: my, active: true })).ok && (await get({ action: 'getData', token: T })).plots.length === 13, 'включён обратно — снова 13');
 ok((await post({ action: 'checkPassword', password: '1111' })).ok, 'код владельца снова действует');
 
 console.log('Редактирование участков и новые дачники:');
@@ -65,8 +70,8 @@ ok(emir && emir.ownerName === 'Эмир' && /^\+7\d{10}$/.test(emir.phone), 'п�
 ok((await post({ action: 'savePlot', token: T, plotId: my, ownerName: 'X' })).error?.includes('администратора'), 'владелец не может редактировать участки');
 const ed = await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', number: '21', phone: '8 701 555 44 33' });
 ok(ed.ok && ed.name === 'Вадимов В.В.(+77015554433) уч. 21', 'изменены ФИО, номер и телефон (8 701… → +7701…)', JSON.stringify(ed));
-const pub = (await get({ action: 'getData' })).plots.find(p => p.id === my);
-ok(pub.name === 'Вадимов В.В. уч. 21' && pub.number === '21' && !('phone' in pub), 'без входа: новое название без телефона', JSON.stringify(pub.name));
+const pub = (await get({ action: 'getData', token: T })).plots.find(p => p.id === my);
+ok(pub.name === 'Вадимов В.В. уч. 21' && pub.number === '21' && !('phone' in pub), 'владелец видит новое название без телефона', JSON.stringify(pub.name));
 ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', number: '1' })).error?.includes('уже есть'), 'повтор номера участка — отказ');
 ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: '' })).error?.includes('ФИО'), 'пустое ФИО — отказ');
 ok((await post({ action: 'savePlot', token: tok, plotId: my, ownerName: 'Вадимов В.В.', phone: '123' })).error?.includes('Телефон'), 'неверный телефон — отказ');
@@ -82,7 +87,7 @@ ok(nlog.ok && nlog.plotId === np.id, 'новый дачник входит по 
 const nrec = await post({ action: 'addRecord', token: nlog.token, plotId: np.id, reading: 5010, topup: 0, date: today });
 ok(nrec.ok && nrec.consumption === 10 && Math.abs(nrec.newBalance - (-150 - 360)) < 0.01, 'новый дачник вносит показания: расход 10, баланс −510');
 ok((await post({ action: 'savePlot', token: tok, ownerName: 'Ещё Один', password: np.storedPwd })).error?.includes('другого участка'), 'повтор кода — отказ');
-ok((await get({ action: 'getData' })).plots.length === 14, 'без входа — 14 участков');
+ok((await get({ action: 'getData', token: T })).plots.length === 14, 'владельцу — 14 участков');
 
 console.log('Совместимость со старой страницей (по названию):');
 const legacy = await post({ action: 'updatePayment', token: la.token, plotName: adm.plots.find(p => p.id === other).name, topup: 1 });

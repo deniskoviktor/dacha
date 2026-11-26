@@ -115,6 +115,11 @@ input.bad{border-color:var(--red)}
 /* вход */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
 .overlay.hidden{display:none}
+/* без входа — всё размыто, по центру окно входа */
+body.locked .shell>*:not(.overlay):not(.toast){filter:blur(7px);pointer-events:none;user-select:none}
+body.locked #overlay{background:rgba(0,0,0,.25)}
+body.locked .lg-cancel{display:none}
+.lg-hint{font-size:13px;color:var(--text2);margin-top:12px;text-align:center}
 .modal{background:var(--bg);border-radius:var(--rl);padding:24px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.25)}
 .modal-title{font-size:18px;font-weight:650;margin-bottom:6px}
 .modal-sub{font-size:14px;color:var(--text2);margin-bottom:16px}
@@ -292,16 +297,17 @@ input.bad{border-color:var(--red)}
 </div>
 
 <!-- ВХОД -->
-<div class="overlay hidden" id="overlay" onclick="if(event.target===this)closeLogin()">
+<div class="overlay hidden" id="overlay" onclick="if(event.target===this&&!locked)closeLogin()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lg-t">
     <div class="modal-title" id="lg-t"><i class="ti ti-lock"></i> Вход</div>
     <div class="modal-sub">Ваш 4-значный код или пароль администратора</div>
     <input type="password" class="pin-inp" id="pin" inputmode="numeric" autocomplete="current-password" maxlength="20" placeholder="····" oninput="document.getElementById('login-err').innerHTML=''" onkeydown="if(event.key==='Enter')doLogin()">
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-p" style="flex:1" id="login-btn" onclick="doLogin()"><i class="ti ti-login"></i> Войти</button>
-      <button class="btn" onclick="closeLogin()">Отмена</button>
+      <button class="btn lg-cancel" onclick="closeLogin()">Отмена</button>
     </div>
     <div id="login-err"></div>
+    <div class="lg-hint">Нет кода или забыли — напишите: <a href="https://wa.me/77772820767" style="white-space:nowrap">+7 777 282 07 67</a></div>
   </div>
 </div>
 
@@ -333,7 +339,7 @@ input.bad{border-color:var(--red)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 15:28</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 16:10</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -341,6 +347,7 @@ const NAS_API_URL = 'https://dacha.82-115-48-98.sslip.io/api';
 const DEFAULT_API = /github\.io$/.test(location.hostname) || location.protocol === 'file:' ? NAS_API_URL : location.origin + '/api';
 
 let url = localStorage.getItem('dacha_api') || DEFAULT_API;
+let locked = false;
 let plots = [], busy = false, tariff = 36, pendingPwd = null;
 let session = null;
 try { session = JSON.parse(sessionStorage.getItem('dacha_sess') || 'null'); } catch { session = null; }
@@ -369,7 +376,7 @@ async function apiPost(body) {
   const r = await fetch(url, { method: 'POST', body: JSON.stringify({ ...body, token: session?.token }) });
   if (!r.ok) throw new Error('сервер ответил ' + r.status);
   const d = await r.json();
-  if (d.error === 'Требуется вход') { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
+  if (d.error === 'Требуется вход') { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); setTimeout(() => load(true), 0); }
   return d;
 }
 
@@ -417,7 +424,14 @@ function updateUI() {
   } else b.style.display = 'none';
 }
 function openLogin() { $('overlay').classList.remove('hidden'); $('pin').value = ''; $('login-err').innerHTML = ''; setTimeout(() => $('pin').focus(), 50); }
-function closeLogin() { $('overlay').classList.add('hidden'); }
+function closeLogin() { if (locked) return; $('overlay').classList.add('hidden'); }
+// заглушка под размытием — настоящие данные без входа сервер не отдаёт
+const DUMMY = Array.from({ length: 10 }, (_, i) => ({ id: -1 - i, name: 'Участок', number: String(i + 1), active: true,
+  records: [{ date: '01.01.2026', reading: 1000 + i * 137, prevReading: 900, consumption: 100, price: 36, cost: 3600, topup: 4000, balanceBefore: 0, balance: (i % 4 ? 1 : -1) * (400 + i * 90), checkNum: '', note: '' }] }));
+function setLocked(on) {
+  locked = on; document.body.classList.toggle('locked', on);
+  if (on) { $('overlay').classList.remove('hidden'); $('login-err').innerHTML = ''; setTimeout(() => $('pin').focus(), 50); }
+}
 async function doLogin() {
   const pin = $('pin').value.trim();
   if (!pin) return;
@@ -427,7 +441,7 @@ async function doLogin() {
     if (d.ok && (d.role === 'owner' || d.role === 'admin')) {
       session = d.role === 'admin' ? { role: 'admin', token: d.token } : { role: 'owner', plotId: d.plotId, plotName: d.plotName, token: d.token };
       sessionStorage.setItem('dacha_sess', JSON.stringify(session));
-      closeLogin(); updateUI();
+      locked = false; document.body.classList.remove('locked'); closeLogin(); updateUI();
       toast(isAdmin() ? 'Вы вошли как администратор' : 'Здравствуйте! Участок: ' + shortName(d.plotName));
       await load(true);
       go('ov');
@@ -465,7 +479,10 @@ async function load(quiet) {
     if (!url) throw new Error('не указан адрес сервера');
     const d = await apiGet('getData');
     if (d.error) throw new Error(d.error);
-    plots = (d.plots || []).filter(p => p.name && !String(p.name).startsWith('Дата'));
+    // сессия истекла или нет входа — размытая заглушка и окно входа
+    if (d.locked && session) { session = null; sessionStorage.removeItem('dacha_sess'); updateUI(); }
+    setLocked(!!d.locked);
+    plots = d.locked ? DUMMY : (d.plots || []).filter(p => p.name && !String(p.name).startsWith('Дата'));
     plots.forEach(p => (p.records || []).forEach(r => { r.date = normDate(r.date); }));
     try { const t = await apiGet('getTariff'); if (t.tariff) tariff = Number(t.tariff); } catch {}
     setS('ok', 'Обновлено в ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));

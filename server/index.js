@@ -129,8 +129,28 @@ async function audit(c, sess, action, plotName, details) {
 }
 
 /* ─── чтение ─── */
+/** Для напоминания в группу: только номера участков (без ФИО и сумм). Логика как на странице: stale() и долг. */
+async function getSummary() {
+  const plots = (await pool.query('SELECT id, plot_number FROM plots WHERE active ORDER BY sort_order, id')).rows;
+  const last = new Map((await pool.query(`SELECT DISTINCT ON (plot_id) plot_id, date, balance FROM records
+    WHERE date IS NOT NULL AND (reading > 0 OR consumption > 0 OR topup > 0 OR cost > 0) ORDER BY plot_id, date DESC, id DESC`)).rows.map(r => [r.plot_id, r]));
+  const stale = [], debt = []; let staleNoNum = 0, debtNoNum = 0;
+  for (const p of plots) {
+    const r = last.get(p.id); if (!r) continue;
+    const [y, m, d] = r.date.split('-').map(Number);
+    const isStale = y > 2023 && (Date.now() - new Date(y, m - 1, d)) / (864e5 * 30.4) > 2;
+    const no = String(p.plot_number || '').trim();
+    if (isStale) no ? stale.push(no) : staleNoNum++;
+    if (Number(r.balance) < 0) no ? debt.push(no) : debtNoNum++;
+  }
+  const sort = a => a.sort((x, y) => parseInt(x) - parseInt(y) || x.localeCompare(y));
+  return { stale: sort(stale), debt: sort(debt), staleNoNum, debtNoNum };
+}
+
 async function getData(sess) {
-  const isAdmin = sess && sess.role === 'admin';
+  // без входа данных нет вовсе: страница показывает размытую заглушку и окно входа
+  if (!sess) return { locked: true, plots: [] };
+  const isAdmin = sess.role === 'admin';
   // отключённые участки видит только администратор
   const plots = (await pool.query(`SELECT * FROM plots ${isAdmin ? '' : 'WHERE active'} ORDER BY sort_order, id`)).rows;
   const recs = (await pool.query('SELECT * FROM records ORDER BY plot_id, id')).rows;
@@ -341,6 +361,7 @@ app.get('/api', wrap(async req => {
   const sess = readToken(req.query.token);
   switch (req.query.action) {
     case 'getData': return getData(sess);
+    case 'summary': return getSummary();
     case 'getTariff': return { tariff: await getTariff() };
     case 'checkPassword': return checkPassword(req.query.password, req.ip);
     case 'whoami': return sess ? { ok: true, role: sess.role, plotId: sess.plotId, plotName: publicName(sess.plotName) } : { ok: false };
