@@ -393,7 +393,7 @@ details.hist[open]>summary .chev{transform:rotate(180deg)}
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 21:40</div>
+<div style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px" id="ver">Версия от 26.11.2026 22:00</div>
 </div><!-- .shell -->
 <script>
 // Адрес сервера: если страница открыта с самого NAS — он же; со старых адресов — внешний адрес NAS
@@ -465,7 +465,7 @@ const canEdit = p => !!p && (isAdmin() || (isOwner() && session.plotId === p.id)
 const myPlots = () => isAdmin() ? plots : plots.filter(p => isOwner() && p.id === session.plotId);
 function stale(p) { const l = lastR(p); if (!l) return false; const y = pDate(l.date).getFullYear(); return y > 2023 && monthsSince(l.date) > 2; }
 const ownerOf = p => p.ownerName || shortName(p.name);
-const plotLabel = p => esc(ownerOf(p)) + (plotNo(p) ? ` <span style="color:var(--text2);font-weight:400">· уч. ${esc(plotNo(p))}</span>` : '');
+const plotLabel = p => p.anon ? esc(p.name) : esc(ownerOf(p)) + (plotNo(p) ? ` <span style="color:var(--text2);font-weight:400">· уч. ${esc(plotNo(p))}</span>` : '');
 
 /* ─── вход ─── */
 function updateUI() {

@@ -206,7 +206,11 @@ async function getData(sess) {
   }
   return {
     plots: plots.map(p => {
-      const o = { id: p.id, name: isAdmin ? p.name : publicName(p.name), number: p.plot_number || '', active: p.active, records: byPlot.get(p.id) };
+      // дачник видит своё имя, а по чужим участкам — только номер (без ФИО и телефона); администратор — всё
+      const mine = sess.role === 'owner' && sess.plotId === p.id;
+      const anon = !isAdmin && !mine;
+      const name = isAdmin ? p.name : mine ? publicName(p.name) : (p.plot_number ? `Участок № ${p.plot_number}` : `Участок без номера`);
+      const o = { id: p.id, name, number: p.plot_number || '', active: p.active, records: byPlot.get(p.id), ...(anon ? { anon: true } : {}) };
       if (isAdmin) Object.assign(o, { storedPwd: p.password || '', ownerName: p.owner_name || '', phone: p.phone || '' }); // коды и телефоны видит только администратор
       return o;
     }),

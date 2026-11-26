@@ -50,6 +50,7 @@ await run('Телефон, владелец (код 1111):', { ...devices['iPhon
   ok(await p.locator('nav.tabs').evaluate((e) => getComputedStyle(e).position === 'fixed'), 'вкладки внизу экрана');
   ok(!/\+?7\d{10}/.test((await p.locator('#pg-ov').innerText()).replace(/\s/g, '')), 'телефонов на странице нет');
   ok(await p.locator('#ov-d .row').count() === 13, 'в балансах 13 участков');
+  ok(!/Эмир|Ефимова|Шляхтина/.test(await p.locator('#pg-ov').innerText()) && (await p.locator('#ov-d').innerText()).includes('Участок №'), 'на сводке чужие — только номера участков');
   ok(await p.locator('#ov-mine').innerText().then((t) => t.includes('Мой участок')), 'после входа — карточка «Мой участок»');
   await p.screenshot({ path: `${OUT}/2-мой-участок.png`, fullPage: true });
   await p.click('#ov-mine button:has-text("Показания")');

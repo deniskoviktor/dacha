@@ -23,6 +23,8 @@ ok(anon.plots.length === 13, 'сводка: 13 участков');
 ok(anon.plots.every(p => !/\+?\d{10,}/.test(p.name.replace(/\s/g, ''))), 'в названиях нет телефонов', anon.plots.map(p => p.name).join('; '));
 ok(anon.plots.every(p => !('storedPwd' in p) && !('phone' in p)), 'коды и телефоны не отдаются');
 ok(anon.plots.every(p => Number.isInteger(p.id)), 'у участков есть id');
+ok(anon.plots.filter(p => p.id !== my).every(p => p.anon && /^Участок/.test(p.name) && !('ownerName' in p)), 'чужие участки — только номер, без ФИО', anon.plots.map(p => p.name).join('; '));
+ok(!anon.plots.find(p => p.id === my).anon && /Вадим/.test(anon.plots.find(p => p.id === my).name), 'свой участок — с именем');
 const other = anon.plots.find(p => p.id !== my).id;
 const mine0 = anon.plots.find(p => p.id === my); const last0 = mine0.records.filter(r => r.reading > 0).pop();
 const r1 = await post({ action: 'addRecord', token: T, plotId: my, reading: Number(last0.reading) + 10, topup: 0, date: today, note: '<img src=x onerror=alert(1)>' });
