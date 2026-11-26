@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Инструкция пользователя — Учёт электроэнергии</title>
+<!-- Исходник PDF-инструкции (instrukciya_polzovatelya.pdf). Пересобрать: docs/build-pdf.sh на NAS. -->
+<style>
+@page { size: A4; margin: 14mm 14mm 16mm; }
+* { box-sizing: border-box; }
+body { font-family: 'DejaVu Sans', Arial, sans-serif; color: #1a1a18; font-size: 10.5pt; line-height: 1.45; margin: 0; }
+.top { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #1a1a18; padding-bottom: 10px; margin-bottom: 14px; }
+.logo { width: 40px; height: 40px; border-radius: 10px; background: #1a1a18; display: flex; align-items: center; justify-content: center; flex: none; }
+.top h1 { font-size: 19pt; margin: 0; line-height: 1.1; }
+.top .s { color: #6b6b66; font-size: 10pt; }
+h2 { font-size: 13pt; color: #185fa5; margin: 16px 0 6px; break-after: avoid; }
+p { margin: 4px 0 8px; }
+.url { border: 1.5px solid #185fa5; background: #e6f1fb; border-radius: 8px; padding: 9px 12px; text-align: center; font-family: 'DejaVu Sans Mono', monospace; font-weight: 700; color: #185fa5; font-size: 12pt; margin: 6px 0 8px; }
+table { width: 100%; border-collapse: collapse; margin: 4px 0 8px; break-inside: avoid; }
+th, td { border: 1px solid #d6d6d0; padding: 5px 8px; text-align: left; vertical-align: top; }
+th { background: #1a1a18; color: #fff; font-weight: 700; }
+tr:nth-child(even) td { background: #f5f5f3; }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 4px 0 8px; break-inside: avoid; }
+.steps li { counter-increment: s; position: relative; padding: 5px 8px 5px 38px; border: 1px solid #d6d6d0; border-top: 0; }
+.steps li:first-child { border-top: 1px solid #d6d6d0; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; bottom: 0; width: 28px; background: #185fa5; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.steps.red li::before { background: #c8102e; }
+.steps.green li::before { background: #3b6d11; }
+.note { border-radius: 8px; padding: 8px 11px; margin: 6px 0 10px; break-inside: avoid; }
+.note.info { background: #e6f1fb; border: 1px solid #9cc3ea; }
+.note.warn { background: #faeeda; border: 1px solid #e8c48a; color: #5c3606; }
+.note.ok { background: #eaf3de; border: 1px solid #a9cf86; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; break-inside: avoid; }
+.two > div { border: 1px solid #d6d6d0; border-radius: 8px; padding: 8px 10px; }
+.two b.h { display: block; margin-bottom: 3px; }
+.req { color: #c8102e; font-weight: 700; }
+.ph { font-weight: 700; color: #3b6d11; white-space: nowrap; }
+.k { display: inline-block; border: 1px solid #b8b8b2; border-radius: 4px; padding: 0 5px; background: #f5f5f3; font-size: 9.5pt; white-space: nowrap; }
+.foot { margin-top: 14px; border-top: 1px solid #d6d6d0; padding-top: 6px; display: flex; justify-content: space-between; color: #6b6b66; font-size: 9pt; }
+.pb { break-before: page; }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f5c542" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3v7h6l-8 11v-7H5l8-11"/></svg></div>
+  <div><h1>Учёт электроэнергии — дача</h1><div class="s">Инструкция для владельцев участков · ноябрь 2026</div></div>
+</div>
+
+<h2>1. Открыть приложение</h2>
+<p>Откройте ссылку на телефоне или компьютере в любом браузере (Chrome, Safari, Яндекс, Firefox):</p>
+<div class="url">https://dacha.82-115-48-98.sslip.io</div>
+<p>Старая ссылка <b>deniskoviktor.github.io/dacha</b> тоже работает — она сама переводит на новый адрес.</p>
+
+<h2>2. Поставить значок на экран телефона (рекомендуем)</h2>
+<p>Так приложение открывается одним касанием, как обычное, и в нём работают уведомления.</p>
+<div class="two">
+  <div><b class="h">Android (Chrome)</b>Меню <span class="k">⋮</span> вверху справа → «Добавить на главный экран» или «Установить приложение» → «Добавить».</div>
+  <div><b class="h">iPhone (Safari)</b>Кнопка «Поделиться» <span class="k">⬆</span> внизу → «На экран Домой» → «Добавить». Дальше открывайте приложение со значка <b>⚡ Дача</b>.</div>
+</div>
+
+<h2>3. Вход по коду</h2>
+<p>Без входа данные не видны: экран размыт, а по центру — окно входа.</p>
+<ol class="steps">
+  <li>Введите ваш <b>4-значный код</b> участка</li>
+  <li>Нажмите «Войти» — откроется карточка «Мой участок»</li>
+  <li>Готово. Код запоминается на этом устройстве — больше вводить его не нужно</li>
+</ol>
+<div class="note info">Нет кода или забыли — напишите администратору в WhatsApp: <span class="ph">+7 777 282 07 67</span>.<br>
+Чужой или общий телефон — после работы нажмите значок «Выйти» вверху справа: код будет забыт.</div>
+
+<h2>4. Уведомления о долге</h2>
+<p>После входа телефон спросит: «Разрешить уведомления?» — нажмите <b>«Разрешить»</b>. Это нужно один раз.</p>
+<ul>
+  <li>Уведомление приходит, если у участка <b>долг</b> или давно нет показаний и по оценке баланс ушёл в минус.</li>
+  <li>Не чаще <b>одного раза в неделю</b>, днём, и только пока долг не погашен.</li>
+  <li>Выключить или проверить — в карточке «Мой участок»: «Выключить» / «Проверить».</li>
+</ul>
+<div class="note warn">На iPhone уведомления работают только из значка на экране «Домой» (пункт 2), не из Safari.</div>
+
+<h2>5. Внести показания счётчика</h2>
+<p>Вкладка <b>«Показания»</b> (внизу экрана) или кнопка «Показания» в карточке «Мой участок». Участок подставляется сам.</p>
+<table>
+  <tr><th style="width:30%">Поле</th><th>Что указать</th></tr>
+  <tr><td>Показание счётчика <span class="req">*</span></td><td>Цифры со счётчика сейчас. Не может быть меньше прошлого — прошлое показание видно под полем.</td></tr>
+  <tr><td>Дата</td><td>Сегодня — подставляется сама. Нельзя будущую и раньше прошлой записи.</td></tr>
+  <tr><td>Оплата сейчас, ₸</td><td>Если заодно оплатили — сумма. Не платили — оставьте <b>0</b>.</td></tr>
+  <tr><td>Номер чека</td><td>Номер квитанции Kaspi, если была оплата (необязательно).</td></tr>
+  <tr><td>Примечание</td><td>Любой комментарий (необязательно).</td></tr>
+</table>
+<p>Под формой сразу видно: расход, стоимость и каким станет баланс. Нажмите <b>«Сохранить показания»</b>. Цена за кВт·ч и расход считаются сами.</p>
+<div class="note warn">Одна запись в день. Если сегодня показания уже внесены, а нужно добавить оплату — используйте вкладку «Оплата» (пункт 7).</div>
+
+<h2>6. Оплатить электроэнергию в Kaspi.kz</h2>
+<table>
+  <tr><th style="width:40%">Реквизит</th><th>Значение</th></tr>
+  <tr><td>Услуга</td><td>Электроэнергия</td></tr>
+  <tr><td>Организация</td><td>Филиал АО АЖК — «Энергосбыт»</td></tr>
+  <tr><td>ИИН/БИН организации</td><td><b>640318301763</b></td></tr>
+  <tr><td>Номер договора</td><td><b>380716</b></td></tr>
+</table>
+<ol class="steps red">
+  <li>Kaspi.kz → «Платежи» → «Электроэнергия» → «Энергосбыт»</li>
+  <li>Номер договора <b>380716</b>, сумма → подтвердить оплату</li>
+  <li>Сохраните номер квитанции — он пригодится в приложении</li>
+</ol>
+
+<h2>7. Отметить оплату в приложении</h2>
+<p>Оплатили — обязательно отметьте, иначе баланс не изменится.</p>
+<ol class="steps green">
+  <li>Вкладка <b>«Оплата»</b> (или «Пополнить» в карточке «Мой участок»)</li>
+  <li>Сумма пополнения — больше 0; номер чека из Kaspi</li>
+  <li>Внизу видно, каким станет баланс → <b>«Сохранить оплату»</b></li>
+</ol>
+<p>Сумма добавляется к вашей последней записи.</p>
+
+<h2>8. Мой участок и «Статистика»</h2>
+<table>
+  <tr><th style="width:30%">Где</th><th>Что видно</th></tr>
+  <tr><td>«Мой участок» (Сводка)</td><td>Баланс (зелёный — переплата, красный — долг), последние показания, кнопки «Показания» и «Пополнить».</td></tr>
+  <tr><td>Вкладка «Статистика»</td><td>Только ваш участок: расход по месяцам (кВт·ч), начислено и оплачено по месяцам, таблица по месяцам, история всех записей. Период — 12 месяцев, 2 года или всё время. Нажмите на столбик — появятся суммы за месяц.</td></tr>
+  <tr><td>«Сводка»</td><td>Общая картина по посёлку: участки, долг, переплаты, балансы и последние записи.</td></tr>
+</table>
+<div class="note info"><b>Знак «≈» у баланса</b> — оценка. Если показаний нет больше 2 месяцев, за это время начисляется ваш средний расход. Передайте показания — баланс посчитается точно по счётчику.</div>
+
+<h2>9. Напоминания в группе WhatsApp</h2>
+<p>1-го и 15-го числа в 10:00 в группу «Дачный посёлок Алатау» приходит напоминание со ссылкой и список <b>номеров</b> участков, которые давно не передавали показания или имеют долг (без имён и сумм).</p>
+
+<h2>10. Частые вопросы</h2>
+<table>
+  <tr><th style="width:36%">Вопрос</th><th>Ответ</th></tr>
+  <tr><td>Забыл код / нет кода</td><td>WhatsApp администратору: <span class="ph">+7 777 282 07 67</span></td></tr>
+  <tr><td>Новый телефон</td><td>Откройте ссылку и введите код один раз.</td></tr>
+  <tr><td>Снова просит код</td><td>Нажимали «Выйти», очистили браузер или администратор сменил код — введите код (новый — у администратора).</td></tr>
+  <tr><td>Ошибся в показаниях</td><td>Напишите администратору — он исправит запись.</td></tr>
+  <tr><td>«Запись уже есть» за сегодня</td><td>Оплату добавьте во вкладке «Оплата».</td></tr>
+  <tr><td>Баланс с «≈»</td><td>Это оценка за время без показаний — внесите показания.</td></tr>
+  <tr><td>Не приходят уведомления</td><td>Разрешите их для сайта в настройках телефона; на iPhone — открывайте со значка на экране «Домой».</td></tr>
+  <tr><td>Неверный баланс</td><td>Напишите администратору — он проверит.</td></tr>
+</table>
+
+<div class="foot"><span>Учёт электроэнергии — дача</span><span>dacha.82-115-48-98.sslip.io</span><span>WhatsApp: +7 777 282 07 67</span></div>
+</body>
+</html>
